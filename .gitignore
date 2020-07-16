@@ -1,0 +1,16 @@
+# Database
+db.sqlite3
+
+# Logging
+geckodriver.log
+*/geckodriver.log
+
+# Virtual env
+venv
+
+# Cache and compiled code
+__pycache__
+*.pyc
+
+# IDE or editors
+.idea/*
