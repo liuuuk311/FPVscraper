@@ -16,7 +16,7 @@ services:
     volumes:
       - .:/code
     ports:
-      - "8000:8000"
+      - "8000:80"
     depends_on:
       - db
       - es
@@ -55,6 +55,7 @@ services:
         soft: -1
         hard: -1
     volumes:
+      - ${WEBAPP_STORAGE_HOME}/site/wwwroot:/tmp/share/elasticsearch/data
       - data01:/tmp/share/elasticsearch/data
 
 volumes:
