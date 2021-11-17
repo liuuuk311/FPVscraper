@@ -55,7 +55,6 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - ${WEBAPP_STORAGE_HOME}/site/wwwroot:/tmp/share/elasticsearch/data
       - data01:/tmp/share/elasticsearch/data
 
 volumes:
