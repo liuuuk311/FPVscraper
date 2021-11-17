@@ -1,8 +1,9 @@
 from django.db import models
+from django.utils import timezone
 
 
 class BaseModel(models.Model):
-    """ The base model that every other model should extends """
+    """The base model that every other model should extends"""
 
     created_at = models.DateTimeField(auto_now=True, auto_created=True)
     is_active = models.BooleanField(default=True)
@@ -12,19 +13,127 @@ class BaseModel(models.Model):
 
 
 class Store(BaseModel):
-    """ This model represent an online store """
+    """This model represent an online store"""
 
-    REGIONS = (
-        ('USA', 'United States'),
-        ('ITA', 'Italy'),
-        ('CHN', 'China'),
-        ('OTH', 'Other')
+    REGIONS = (("USA", "United States"), ("IT", "Italy"), ("OTH", "Other"))
+
+    CURRENCIES = (("EUR", "Euro"), ("USD", "US Dollar"))
+
+    LOCALE = (("en_US", "American"), ("it_IT", "European"))
+
+    name = models.CharField("Name of the store", max_length=256)
+    website = models.URLField("URL of the store")
+    region = models.CharField("Region of the store", max_length=3, choices=REGIONS)
+    locale = models.CharField(
+        "Locale used in the store",
+        max_length=5,
+        choices=LOCALE,
+        default="it_IT",
+        help_text="If the store uses , as decimal separator choose European",
+    )
+    currency = models.CharField(
+        "Default Currency", max_length=3, choices=CURRENCIES, default="EUR"
+    )
+    last_check = models.DateTimeField("Last check", null=True)
+
+    is_scrapable = models.BooleanField("Is the store still compatible?", default=False)
+    is_scrapable.short_description = "Is the store still compatible?"
+    is_scrapable.boolean = True
+
+    not_scrapable_reason = models.CharField(
+        "The reason why this store was not scrapable",
+        max_length=512,
+        null=True,
+        blank=True,
     )
 
-    name = models.CharField("The name of the store", max_length=256)
-    website = models.URLField("The URL of the store")
-    region = models.CharField("The region of the store", max_length=3, choices=REGIONS)
-    last_check = models.DateTimeField("The timestamp of the last check")
+    # Scraping config
+    search_url = models.URLField("The base url of the search page")
+    search_tag = models.CharField(
+        "The nearest html tag for each product item displayed in the result page",
+        max_length=64,
+    )
+    search_class = models.CharField(
+        "The nearest css class for the search_tag", max_length=64
+    )
+    search_link = models.CharField(
+        "The nearest css class from where to search the product page link",
+        max_length=64,
+    )
+    search_next_page = models.CharField(
+        "The nearest css class from where to get the next page link",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+
+    product_name_class = models.CharField(
+        "The css class of the product's name", max_length=64
+    )
+    product_name_tag = models.CharField(
+        "The html tag of the product's name", max_length=64
+    )
+    product_price_class = models.CharField(
+        "The css class of the product's price", max_length=64
+    )
+    product_price_tag = models.CharField(
+        "The html tag of the product's price", max_length=64
+    )
+    product_image_class = models.CharField(
+        "The css class of the main image of the product",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+    product_image_tag = models.CharField(
+        "The html tag of the main image of the product",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+    product_thumb_class = models.CharField(
+        "The css class of the thumbnail images of the product",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+    product_thumb_tag = models.CharField(
+        "The html tag of the thumbnail images of the product",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+    product_is_available_class = models.CharField(
+        "The css class to know if the product is available",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+    product_is_available_tag = models.CharField(
+        "The html tag to know if the product is available",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+    product_is_available_match = models.CharField(
+        "Regex to match if the product is in stock",
+        max_length=128,
+        null=True,
+        blank=True,
+    )
+    product_variations_class = models.CharField(
+        "The css class to know if the product has variations",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+    product_variations_tag = models.CharField(
+        "The html tag to know if the product has variations",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+
 
     def __str__(self):
         return "{} ({})".format(
@@ -32,9 +141,56 @@ class Store(BaseModel):
             self.website,
         )
 
+    def set_is_not_scarpable(self, reason: str):
+        self.not_scrapable_reason = reason
+        self.last_check = timezone.now()
+        self.is_scrapable = False
+        self.save()
+
+    def set_is_scrapable(self):
+        self.not_scrapable_reason = ""
+        self.last_check = timezone.now()
+        self.is_scrapable = True
+        self.save()
+
+    def best_shipping_method(self) -> "ShippingMethod":
+        return self.shipping_methods.filter(price__isnull=False).order_by("price").first()
+
+
+class ShippingMethod(BaseModel):
+    store = models.ForeignKey(
+        Store, related_name="shipping_methods", on_delete=models.CASCADE
+    )
+    name = models.CharField("Name", max_length=128)
+    min_shipping_time = models.SmallIntegerField(
+        "Minimum Shipping Time in days", default=1
+    )
+    max_shipping_time = models.SmallIntegerField(
+        "Maximum Shipping Time in days", null=True, blank=True
+    )
+    price = models.DecimalField(
+        "Shipping Cost", null=True, blank=True, max_digits=3, decimal_places=2
+    )
+    min_price_free_shipping = models.DecimalField(
+        "Minimum price to get free shipping",
+        null=True,
+        blank=True,
+        max_digits=5,
+        decimal_places=2,
+    )
+
+    @property
+    def is_free(self):
+        return (
+            self.price is None or self.price == 0
+        ) and self.min_price_free_shipping is not None
+
+    def __str__(self):
+        return f"{self.store.name} - {self.name}"
+
 
 class Category(BaseModel):
-    """ This model represent a the category of a product """
+    """This model represent a the category of a product"""
 
     name = models.CharField("The name of the category", max_length=256)
 
@@ -42,16 +198,28 @@ class Category(BaseModel):
         verbose_name = "Category"
         verbose_name_plural = "Categories"
 
+    def __str__(self):
+        return self.name
+
 
 class Product(BaseModel):
-    """ This model represent the base class for a generic product """
+    """This model represent the base class for a generic product"""
+
+    id = models.CharField("Unique ID", max_length=770, primary_key=True)
 
     name = models.CharField("The name of the product", max_length=512)
     description = models.TextField("Description of the product")
     price = models.FloatField("Price of the product")
-    average_stars = models.FloatField("The average stars from reviews", null=True)
-    store = models.ForeignKey(Store, on_delete=models.CASCADE)
-    category = models.ForeignKey(Category, on_delete=models.DO_NOTHING, null=True)
+    currency = models.CharField("Currency", default="USD", max_length=3)
+    review = models.FloatField("The average stars from reviews", null=True, blank=True)
+    image = models.URLField("The url of the product's image", null=True)
+    link = models.URLField("The url of the product's page", default="")
+    store = models.ForeignKey(Store, related_name="products", on_delete=models.CASCADE)
+
+    is_available = models.BooleanField(
+        "Is available", default=True, null=True, blank=True
+    )
+    import_date = models.DateTimeField("Import date", auto_now=True, auto_created=True)
 
     def __str__(self):
         return "{} from {}, price: {}".format(
@@ -59,19 +227,3 @@ class Product(BaseModel):
             self.store.name,
             self.price,
         )
-
-
-class Picture(BaseModel):
-    """ This model represent an online picture """
-
-    url = models.URLField("The url of the picture")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-    def __str__(self):
-        class_name = type(self).__name__
-        return "[{}]: {}".format(
-            class_name,
-            self.url,
-        )
-
-

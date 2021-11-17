@@ -1,127 +1,165 @@
+import locale
+import re
+
+import random
 import unicodedata
+from time import sleep
+from typing import Optional, List, Dict
 from urllib.parse import quote
 
 import requests
+import urllib
 from bs4 import BeautifulSoup
+from celery.utils.log import get_task_logger
 
+from search.models import Store
 
-def get_soup(url):
+logger = get_task_logger(__name__)
+
+def get_soup(url: str) -> Optional[BeautifulSoup]:
     """ Get a soup object from a url """
-    # TODO: implement checks on the urls validity and respose status code
 
-    page = requests.get(url)
+    page = requests.get(url, headers = {'User-Agent': get_random_user_agent()})
+    if page.status_code != 200:
+        return None
+
     return BeautifulSoup(page.content, 'html.parser')
 
 
-def scrape_product(url, config):
+def get_link(soup: BeautifulSoup, config: Store) -> str:
+    href = soup.find_next('a')['href']
+    if href.startswith('/'):
+        href = config.website + href
+    return href
+
+
+def parse_price(price_string: str, store_locale: str = "it_IT") -> Optional[float]:
+    regex = r"(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))"
+    pattern = re.compile(regex)
+    match = pattern.match(price_string.strip("€"))
+    if match:
+        locale.setlocale(locale.LC_NUMERIC, store_locale)
+        return locale.atof(match.group(1))
+    return None
+
+
+def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) -> Dict:
     """
     Scrape a product from a url based on the config dict
 
     :param url: a valid product page to scrape
-    :param config: a dictionary with field names as keys.
-        Each field must have two keys: tag and class
+    :param config: a search.models.Store instance.
+    :param fields: (optional) a list of fields in search.models.Store
 
     :returns: a dictionary with fields as given in the config and values scraped.
         If a field is not found in the page, it won't be returned.
     """
+    fields = fields or ['name', 'price', 'image']
 
+    logger.info(f"Looking for {fields} on {url}")
     soup = get_soup(url)
-
     data = {}
-    for field in config:
-        style_class = config[field]['class']
-        html_tag = config[field]['tag']
-        soup_obj = soup.find(html_tag, class_=style_class)
-        if soup_obj:
-            unicode_str = soup_obj.get_text()
-            data[field] = unicodedata.normalize("NFKD", unicode_str).strip()
 
+    if not soup:
+        return data
+
+    for field in fields:
+        style_class = getattr(config, "product_{}_class".format(field))
+        html_tag = getattr(config, "product_{}_tag".format(field))
+
+        print(field)
+
+        if style_class is None or html_tag is None:
+            continue
+
+        soup_obj = soup.find(html_tag, class_=style_class)
+
+        logger.info(f"Scraping {field} with tag {html_tag} and class {style_class}")
+
+        if field == 'is_available' and 'is_available' not in data:
+            data[field] = bool(re.search(config.product_is_available_match, soup_obj.get_text())) if soup_obj else False
+            continue
+
+        if soup_obj:
+            unicode_str_text = soup_obj.get_text()
+            logger.info(f"Found {unicode_str_text.strip()}")
+
+            if field == 'image':
+                if soup_obj.name != "img":
+                    soup_obj = soup_obj.find("img")
+                data[field] = soup_obj['data-src'] if soup_obj.has_attr('data-src') else soup_obj['src']
+
+            elif field == 'price':
+                price = parse_price(unicode_str_text.strip(), store_locale=config.locale)
+                data[field] = price
+                data['currency'] = config.currency
+
+            elif field == 'variations':
+                data['is_available'] = None
+            else:
+                data[field] = unicodedata.normalize("NFKD", unicode_str_text).strip()
+
+    data['link'] = url
     return data
 
 
-def search(query, config, limit=1):
+def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep: int = 5) -> List[str]:
     """
     Search for the given query on a store and returns a list of product pages
 
     :param query: a string of the product we are looking for
-    :param config: a dictionary with a search object.
-        'search': {
-            'url':   ...,  # This represent the base url of the search page
-            'tag':   ...,  # This represent the html tag of each product item displayed in the result page
-            'class': ...,  # This represent the css class of the tag above
-            'link':  ...,  # This represent the css class from where to search the product page link
-        },
-    :param limit: (optional) the maximum number of results
+    :param config: a search.models.Store instance.
+    :param limit: (optional) the maximum number of results,
+        if None return all possible products looping through the pages
+    :param seconds_of_sleep: (optional) number of seconds of sleep between scraping pages
 
-    :return: a list of product pages
+    :return: a list of scraped urls
     """
-    url = config['search']['url'] + query
-    soup = get_soup(url)
+    next_url = config.search_url + quote(query)
+    scraped_urls = []
 
-    style_class = config['search']['class']
-    html_tag = config['search']['tag']
-    soup_list = soup.find_all(name=html_tag, attrs={'class': style_class}, limit=limit)
+    while next_url:
+        soup = get_soup(next_url)
+        if not soup:
+            return scraped_urls
 
-    urls = []
-    link_tag = config['search']['link']
-    for obj in soup_list:
-        title = obj.find(class_=link_tag)
-        if title:
-            href = title.find_next('a')['href']
-            if href.startswith('/'):
-                href = config['base'] + href
+        next_url = None
 
-            urls.append(href)
+        soup_list = soup.find_all(name=config.search_tag,
+                                  attrs={'class': config.search_class},
+                                  limit=limit)
 
-    return urls
+        for obj in soup_list:
+            title = obj.find(class_=config.search_link)
+            if title:
+                href = get_link(title, config)
+
+                if limit and len(scraped_urls) == limit:
+                    return scraped_urls
+
+                scraped_urls.append(href)
+
+        if config.search_next_page:
+            next_link = soup.find(class_=config.search_next_page)
+
+            if next_link:
+                next_url = next_link['href']
+                if next_url and not next_url.startswith("http"):
+                    next_url = urllib.parse.urljoin(config.website, next_url)
+                sleep(seconds_of_sleep)
+
+    return scraped_urls
 
 
-if __name__ == '__main__':
-
-    # GetFPV
-    getfpv = {
-        'base': 'http://www.getfpv.com',
-        'search': {
-            'url': 'http://www.getfpv.com/catalogsearch/result/?q=',  # This represent the base url of the search page
-            'tag': 'li',  # This represent the html tag of each product item displayed in the result page
-            'class': 'item',  # This represent the css class of the tag above
-            'link': 'product-name',  # This represent the css class from where to search the product page link
-        },
-        'product': {
-            # Info needed to scrape a product
-            'name': {'class': 'product-name', 'tag': 'div'},
-            'price': {'class': 'price', 'tag': 'span'},
-            'stars': {'class': 'sr-only', 'tag': 'span'},
-            'description': {'class': 'tab-content', 'tag': 'div'},
-        }
-    }
-
-    # RaceDayQuad
-    rdq = {
-        'base': 'http://www.racedayquads.com',
-        'search': {
-            'url': 'http://www.racedayquads.com/search?type=product&q=',
-            # This represent the base url of the search page
-            'tag': 'div',  # This represent the html tag of each product item displayed in the result page
-            'class': 'productitem',  # This represent the css class of the tag above
-            'link': 'productitem--title'  # This represent the css class from where to search the product page link
-        },
-        'product': {
-            # Info needed to scrape a product
-            'name': {'class': 'product-title', 'tag': 'h1'},
-            'price': {'class': 'price--main', 'tag': 'div'},
-            'stars': {'class': 'yotpo-starsd ', 'tag': 'span'},
-            'description': {'class': 'tab-content', 'tag': 'span'},
-        }
-
-    }
-
-    query_text = quote('T motor f40 pro IV')
-
-    getfpv_urls = search(query_text, getfpv)
-    for product_url in getfpv_urls:
-        print(scrape_product(product_url, getfpv['product']))
-
-    rdq_urls = search(query_text, rdq)
-    for product_url in rdq_urls:
-        print(scrape_product(product_url, rdq['product']))
+def get_random_user_agent():
+    agents = [
+        "Mozilla/5.0 (X11; Linux ppc64le; rv:75.0) Gecko/20100101 Firefox/75.0",
+        "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/75.0",
+        "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.10; rv:75.0) Gecko/20100101 Firefox/75.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A",
+        "Opera/9.80 (X11; Linux i686; Ubuntu/14.10) Presto/2.12.388 Version/12.16",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36",
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2919.83 Safari/537.36",
+        "Mozilla/5.0 (Linux; U; Android 4.0.3; ko-kr; LG-L160L Build/IML74K) AppleWebkit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30",
+    ]
+    return random.choice(agents)
