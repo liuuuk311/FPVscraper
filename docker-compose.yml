@@ -7,16 +7,14 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+    volumes:
+      - db:/var/lib/postgresql/data
   app:
-    build:
-      context: .
-      dockerfile: docker/py37.Dockerfile
+    image: python:3.9
     restart: unless-stopped
     command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/code
     ports:
-      - "80:8000"
+      - "8000:8000"
     depends_on:
       - db
       - es
@@ -31,32 +29,36 @@ services:
     restart: unless-stopped
     image: redis:3.2-alpine
 
-  celery_worker:
+  worker:
+    image: python:3.9
     command: celery -A core worker -l info
-    build:
-      context: .
-      dockerfile: docker/py37.Dockerfile
     depends_on:
       - db
       - rabbit
       - redis
 
   es:
-    build:
-      context: .
-      dockerfile: docker/es.Dockerfile
+    image: elasticsearch:7.6.2
     ports:
       - "9200:9200"
-    environment:
-      - bootstrap.memory_lock=true
-      - discovery.type=single-node
+    # environment:
+      # - bootstrap.memory_lock=true
+      # - discovery.type=single-node
     ulimits:
       memlock:
         soft: -1
         hard: -1
     volumes:
-      - data01:/tmp/share/elasticsearch/data
+      - esdata:/tmp/share/elasticsearch/data
 
 volumes:
-  data01:
-    driver: local
+  esdata:
+    driver: azure_file
+    driver_opts:
+      share_name: fpvshare
+      storage_account_name: fpvstorage
+  db:
+    driver: azure_file
+    driver_opts:
+      share_name: fpvshare
+      storage_account_name: fpvstorage
