@@ -7,8 +7,8 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-    volumes:
-      - db:/var/lib/postgresql/data
+    # volumes:
+    #   - db:/var/lib/postgresql/data
   app:
     image: python:3.9
     restart: unless-stopped
@@ -48,17 +48,17 @@ services:
       memlock:
         soft: -1
         hard: -1
-    volumes:
-      - esdata:/tmp/share/elasticsearch/data
+    # volumes:
+    #   - esdata:/tmp/share/elasticsearch/data
 
-volumes:
-  esdata:
-    driver: azure_file
-    driver_opts:
-      share_name: fpvshare
-      storage_account_name: fpvstorage
-  db:
-    driver: azure_file
-    driver_opts:
-      share_name: fpvshare
-      storage_account_name: fpvstorage
+# volumes:
+#   esdata:
+#     driver: azure_file
+#     driver_opts:
+#       share_name: fpvshare
+#       storage_account_name: fpvstorage
+#   db:
+#     driver: azure_file
+#     driver_opts:
+#       share_name: fpvshare
+#       storage_account_name: fpvstorage
