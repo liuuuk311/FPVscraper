@@ -16,8 +16,8 @@ jobs:
         username: ${{ secrets.REGISTRY_USERNAME }}
         password: ${{ secrets.REGISTRY_PASSWORD }}
     - run: |
-        docker build -f docker/py37.Dockerfile -t liuuuk311acr.azurecr.io/app:${{ github.sha }}
-        docker build -f docker/es.Dockerfile -t liuuuk311acr.azurecr.io/es:${{ github.sha }}
+        docker build -f docker/py37.Dockerfile -t liuuuk311acr.azurecr.io/app:${{ github.sha }} .
+        docker build -f docker/es.Dockerfile -t liuuuk311acr.azurecr.io/es:${{ github.sha }} .
         docker push liuuuk311acr.azurecr.io/app:${{ github.sha }} 
         docker push liuuuk311acr.azurecr.io/es:${{ github.sha }}
     - uses: azure/webapps-deploy@v2
