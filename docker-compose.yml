@@ -43,12 +43,12 @@ services:
       - redis
 
   es:
-    image: elasticsearch:7.6.2
+    build:
+      context: .
+      dockerfile: docker/es.Dockerfile
+    image: liuuuk311acr.azurecr.io/es
     ports:
       - "9200:9200"
-    environment:
-      - bootstrap.memory_lock=true
-      - discovery.type=single-node
     ulimits:
       memlock:
         soft: -1

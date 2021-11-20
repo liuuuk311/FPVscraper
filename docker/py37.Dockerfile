@@ -5,8 +5,7 @@ RUN apt-get install -y locales locales-all
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
-RUN mkdir /code
-WORKDIR /code
-COPY requirements.txt /code/
+WORKDIR /.
+COPY requirements.txt /.
 RUN pip install -r requirements.txt
-COPY . /code/
+COPY . /.
