@@ -2,7 +2,7 @@ version: '2.2'
 
 services:
   db:
-    image: postgres
+    image: liuuuk311acr.azurecr.io/postgres
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
@@ -15,7 +15,9 @@ services:
       dockerfile: docker/py37.Dockerfile
     image: liuuuk311acr.azurecr.io/app
     restart: unless-stopped
-    command: python manage.py runserver 0.0.0.0:8000
+    command: bash -c "
+        python manage.py migrate
+        && python manage.py runserver 0.0.0.0:8000"
     # volumes:
     #   - db:/code
     ports:
@@ -28,14 +30,17 @@ services:
 
   rabbit:
     restart: unless-stopped
-    image: rabbitmq
+    image: liuuuk311acr.azurecr.io/rabbitmq
 
   redis:
     restart: unless-stopped
-    image: redis:3.2-alpine
+    image: liuuuk311acr.azurecr.io/redis
 
   worker:
-    image: python:3.9
+    build:
+      context: .
+      dockerfile: docker/py37.Dockerfile
+    image: liuuuk311acr.azurecr.io/app
     command: celery -A core worker -l info
     depends_on:
       - db
