@@ -2,11 +2,13 @@ version: '3'
 
 services:
   db:
-    image: postgres
+    image: postgres:14
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+    volumes:
+      - data01:/var/lib/postgresql/data/pgdata
   app:
     build:
       context: .
@@ -32,10 +34,10 @@ services:
     image: redis:3.2-alpine
 
   celery_worker:
-    command: celery -A core worker -l info
     build:
       context: .
       dockerfile: docker/py37.Dockerfile
+    command: celery -A core worker -l info
     depends_on:
       - db
       - rabbit
@@ -44,7 +46,7 @@ services:
   es:
     build:
       context: .
-      image: docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+      dockerfile: docker/es.Dockerfile
     ports:
       - "9200:9200"
     environment:
