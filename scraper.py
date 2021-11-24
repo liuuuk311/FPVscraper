@@ -102,7 +102,7 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
     return data
 
 
-def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep: int = 3) -> List[str]:
+def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep: int = 10) -> List[str]:
     """
     Search for the given query on a store and returns a list of product pages
 

@@ -14,7 +14,7 @@ from .forms import CsvImportForm
 from .tasks import (
     check_scraping_compatibility,
     import_products_from_categories,
-    re_import_product,
+    re_import_product, import_all_products_for_all_stores,
 )
 from .models import Store, Category, Product, ShippingMethod
 
@@ -157,6 +157,7 @@ class StoreAdmin(ImportCsv, ExportCsvMixin):
 
 class ProductAdmin(admin.ModelAdmin):
     change_form_template = "admin/add_product.html"
+    change_list_template = "admin/product_changelist.html"
     search_fields = ["name"]
     list_display = (
         "name",
@@ -205,6 +206,11 @@ class ProductAdmin(admin.ModelAdmin):
                 r"^(?P<product_id>.+)/import/$",
                 self.admin_site.admin_view(self.product_import),
                 name="product_import",
+            ),
+            url(
+               r"import_from_all_stores/$",
+               self.admin_site.admin_view(self.import_from_all_stores),
+               name="product_import_all",
             )
         ] + urls
 
@@ -216,6 +222,15 @@ class ProductAdmin(admin.ModelAdmin):
             f"Starting to re-import {product.name} from {product.store.name}. Refresh the page to see the new data.",
         )
         return redirect("admin:search_product_change", product_id)
+
+    @staticmethod
+    def import_from_all_stores(request):
+        import_all_products_for_all_stores.delay()
+        messages.success(
+            request,
+            "Importing ALL products for every store. It's gonna take a while",
+        )
+        return redirect("..")
 
 
 class ShippingMethodAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):

@@ -1,0 +1,6 @@
+{% extends 'admin/change_list.html' %}
+
+{% block object-tools-items %}
+    <li><a href="{% url 'admin:product_import_all' %}" class="btn-link">Import From ALL Stores</a></li>
+    {{ block.super }}
+{% endblock %}

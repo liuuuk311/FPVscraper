@@ -72,13 +72,13 @@ def import_products_from_categories(store_pk):
     for category in categories:
         logger.info("Importing {} from {}".format(category, config.name))
         import_products(category.name, config)
-        sleep(5)
+        sleep(15)
 
     elapsed = datetime.now() - start
     logger.info("Imported new products for {} in ".format(config.name, str(elapsed)))
 
 
-def import_products(category: str, config: Store, delay: float = 0.5):
+def import_products(category: str, config: Store, delay: float = 5):
     urls = search(category, config, limit=None)
     for url in urls:
         data = scrape_product(url, config, fields=['name', 'price', 'image', 'is_available', 'variations'])
@@ -94,5 +94,12 @@ def re_import_product(product_id: int):
     create_or_update_product(product.store, data)
 
 
+@task(name="import_all_products_for_all_stores")
+def import_all_products_for_all_stores():
+    start = datetime.now()
+    for category in Category.objects.filter(is_active=True):
+        for store in Store.objects.filter(is_active=True):
+            import_products(category, store)
 
-
+    elapsed = datetime.now() - start
+    logger.info("Imported ALL products in ".format(str(elapsed)))
