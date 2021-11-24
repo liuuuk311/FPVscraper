@@ -16,10 +16,10 @@ from search.models import Store
 
 logger = get_task_logger(__name__)
 
+
 def get_soup(url: str) -> Optional[BeautifulSoup]:
     """ Get a soup object from a url """
-
-    page = requests.get(url, headers = {'User-Agent': get_random_user_agent()})
+    page = requests.get(url, headers={'User-Agent': get_random_user_agent()})
     if page.status_code != 200:
         return None
 
