@@ -27,7 +27,7 @@ jobs:
         uses: fifsky/ssh-action@master
         with:
           command: |
-            cd /FPVScraper
+            cd ~/FPVScraper
             git pull
           host: ${{ secrets.HOST }}
           user: deployer
