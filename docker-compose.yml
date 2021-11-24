@@ -7,8 +7,6 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-    volumes:
-      - data01:/var/lib/postgresql/data/pgdata
   app:
     build:
       context: .
@@ -16,7 +14,7 @@ services:
     restart: unless-stopped
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/code
+        - .:/code
     ports:
       - "8000:8000"
     depends_on:
@@ -33,7 +31,7 @@ services:
     restart: unless-stopped
     image: redis:3.2-alpine
 
-  celery_worker:
+  worker:
     build:
       context: .
       dockerfile: docker/py37.Dockerfile

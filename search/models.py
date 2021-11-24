@@ -156,6 +156,22 @@ class Store(BaseModel):
     def best_shipping_method(self) -> "ShippingMethod":
         return self.shipping_methods.filter(price__isnull=False).order_by("price").first()
 
+    @property
+    def imported_products(self) -> int:
+        return self.products.count()
+
+    @property
+    def products_in_stock(self) -> int:
+        return self.products.filter(is_available=True).count()
+
+    @property
+    def products_out_of_stock(self) -> int:
+        return self.products.filter(is_available=False).count()
+
+    @property
+    def products_with_variations(self) -> int:
+        return self.products.filter(is_available__isnull=True).count()
+
 
 class ShippingMethod(BaseModel):
     store = models.ForeignKey(
@@ -169,7 +185,7 @@ class ShippingMethod(BaseModel):
         "Maximum Shipping Time in days", null=True, blank=True
     )
     price = models.DecimalField(
-        "Shipping Cost", null=True, blank=True, max_digits=3, decimal_places=2
+        "Shipping Cost", null=True, blank=True, max_digits=5, decimal_places=2
     )
     min_price_free_shipping = models.DecimalField(
         "Minimum price to get free shipping",
@@ -212,8 +228,8 @@ class Product(BaseModel):
     price = models.FloatField("Price of the product")
     currency = models.CharField("Currency", default="USD", max_length=3)
     review = models.FloatField("The average stars from reviews", null=True, blank=True)
-    image = models.URLField("The url of the product's image", null=True)
-    link = models.URLField("The url of the product's page", default="")
+    image = models.URLField("The url of the product's image", null=True, max_length=1024)
+    link = models.URLField("The url of the product's page", default="", max_length=1024)
     store = models.ForeignKey(Store, related_name="products", on_delete=models.CASCADE)
 
     is_available = models.BooleanField(

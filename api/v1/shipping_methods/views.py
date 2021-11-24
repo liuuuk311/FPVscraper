@@ -12,4 +12,5 @@ class ShippingMethodViewSet(mixins.RetrieveModelMixin, GenericViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = ShippingMethodSerializer(instance.shipping_methods.order_by('price'), many=True)
+        serializer.context["request"] = request
         return Response(serializer.data)

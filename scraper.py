@@ -67,8 +67,6 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
         style_class = getattr(config, "product_{}_class".format(field))
         html_tag = getattr(config, "product_{}_tag".format(field))
 
-        print(field)
-
         if style_class is None or html_tag is None:
             continue
 
@@ -77,6 +75,7 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
         logger.info(f"Scraping {field} with tag {html_tag} and class {style_class}")
 
         if field == 'is_available' and 'is_available' not in data:
+            logger.info(f"Found {soup_obj.get_text() if soup_obj else 'nothing'}")
             data[field] = bool(re.search(config.product_is_available_match, soup_obj.get_text())) if soup_obj else False
             continue
 
@@ -103,7 +102,7 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
     return data
 
 
-def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep: int = 5) -> List[str]:
+def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep: int = 3) -> List[str]:
     """
     Search for the given query on a store and returns a list of product pages
 
@@ -139,14 +138,20 @@ def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep
 
                 scraped_urls.append(href)
 
-        if config.search_next_page:
-            next_link = soup.find(class_=config.search_next_page)
+        if not config.search_next_page:
+            return scraped_urls
+            
+        next_link = soup.find(class_=config.search_next_page)
 
-            if next_link:
-                next_url = next_link['href']
-                if next_url and not next_url.startswith("http"):
-                    next_url = urllib.parse.urljoin(config.website, next_url)
-                sleep(seconds_of_sleep)
+        if next_link:
+            if next_link.name != "a":
+                next_link = next_link.find("a")
+            
+            next_url = next_link['href']
+            if next_url and not next_url.startswith("http"):
+                next_url = urllib.parse.urljoin(config.website, next_url)
+            logger.info(f"Next Page {next_url}")
+            sleep(seconds_of_sleep)
 
     return scraped_urls
 

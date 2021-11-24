@@ -21,7 +21,8 @@ class ProductDocument(Document):
         'id': fields.IntegerField(),
         'name': fields.TextField(),
         'best_shipping_method': fields.ObjectField(properties={
-            'name': fields.TextField(),
+            'name_en': fields.TextField(),
+            'name_it': fields.TextField(),
             'min_shipping_time': fields.IntegerField(),
             'price': fields.FloatField(),
             'is_free': fields.BooleanField(),

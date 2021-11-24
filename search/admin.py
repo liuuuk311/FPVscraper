@@ -1,19 +1,74 @@
-from celery import group
+import csv
+from abc import abstractmethod
+from datetime import datetime
+
 from django.conf.urls import url
 from django.contrib import admin, messages
-from django.shortcuts import get_object_or_404, redirect
-from django.template.response import TemplateResponse
+from django.http import HttpResponse
+from django.shortcuts import redirect, render
 from django.utils.html import format_html
+from core.translation import *
+from modeltranslation.admin import TranslationAdmin
 
-from .tasks import check_scraping_compatibility, import_products_from_categories, re_import_product
+from .forms import CsvImportForm
+from .tasks import (
+    check_scraping_compatibility,
+    import_products_from_categories,
+    re_import_product,
+)
 from .models import Store, Category, Product, ShippingMethod
 
 
-class StoreAdmin(admin.ModelAdmin):
+class ExportCsvMixin:
+    def export_as_csv(self, request, queryset):
+        meta = f"Export_{datetime.today().strftime('%Y-%m-%d')}_{self.model._meta}"
+        field_names = [field.name for field in self.model._meta.fields]
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = "attachment; filename={}.csv".format(meta)
+        writer = csv.writer(response)
+
+        writer.writerow(field_names)
+        for obj in queryset:
+            row = writer.writerow([getattr(obj, field) for field in field_names])
+
+        return response
+
+    export_as_csv.short_description = "Export Selected"
+
+
+class ImportCsv(admin.ModelAdmin):
+
+    @abstractmethod
+    def create_obj_from_dict(self, data):
+        pass
+
+    def import_csv(self, request):
+        if request.method != "POST":
+            form = CsvImportForm()
+            payload = {"form": form}
+            return render(request, "admin/import_csv_form.html", payload)
+
+        csv_file = request.FILES["csv_file"]
+        decoded_file = csv_file.read().decode("utf-8").splitlines()
+        reader = csv.DictReader(decoded_file)
+        for row in reader:
+            self.create_obj_from_dict(row)
+
+        self.message_user(request, "Your csv file has been imported!")
+        return redirect("..")
+
+
+class StoreAdmin(ImportCsv, ExportCsvMixin):
+    change_list_template = "admin/store_changelist.html"
     search_fields = ["name"]
     list_display = (
         "name",
         "is_scrapable",
+        "imported_products",
+        "products_in_stock",
+        "products_out_of_stock",
+        "products_with_variations",
         "last_check",
     )
     readonly_fields = ("is_scrapable", "not_scrapable_reason")
@@ -62,7 +117,7 @@ class StoreAdmin(admin.ModelAdmin):
             },
         ),
     ]
-    actions = ["check_compatibility", "import_product"]
+    actions = ["check_compatibility", "import_product", "export_as_csv"]
 
     def check_compatibility(self, request, queryset):
         for store in queryset:
@@ -83,6 +138,21 @@ class StoreAdmin(admin.ModelAdmin):
             "A task has been launched to import products from categories.",
             messages.SUCCESS,
         )
+
+    def create_obj_from_dict(self, data):
+        data.pop("id", None)
+        data.pop("created_at", None)
+        Store.objects.create(**data)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        return [
+            url(
+                r"import/$",
+                self.admin_site.admin_view(self.import_csv),
+                name="store_import_csv",
+            )
+        ] + urls
 
 
 class ProductAdmin(admin.ModelAdmin):
@@ -148,7 +218,39 @@ class ProductAdmin(admin.ModelAdmin):
         return redirect("admin:search_product_change", product_id)
 
 
+class ShippingMethodAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):
+    change_list_template = "admin/shipping_methods_changelist.html"
+    actions = ["export_as_csv"]
+
+    def create_obj_from_dict(self, data):
+        store_name = data.pop("store", None).split(' ')[0]
+        store = Store.objects.filter(name=store_name).first()
+        if not store:
+            return
+
+        ShippingMethod.objects.create(
+            store=store,
+            name_it=data.get("name_it"),
+            name_en=data.get("name_en"),
+            min_shipping_time=data.get("min_shipping_time", None) or None,
+            max_shipping_time=data.get("max_shipping_time", None) or None,
+            price=data.get("price", None) or None,
+            min_price_free_shipping=data.get("min_price_free_shipping", None) or None,
+            is_active=data.get("is_active", False)
+        )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        return [
+            url(
+                r"import/$",
+                self.admin_site.admin_view(self.import_csv),
+                name="shipping_methods_import_csv",
+            )
+        ] + urls
+
+
 admin.site.register(Store, StoreAdmin)
-admin.site.register(ShippingMethod)
+admin.site.register(ShippingMethod, ShippingMethodAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Category)

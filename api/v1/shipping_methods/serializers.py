@@ -4,6 +4,7 @@ from search.models import ShippingMethod
 
 
 class ShippingMethodSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
     currency = serializers.CharField(source="store.currency")
 
     class Meta:
@@ -17,3 +18,7 @@ class ShippingMethodSerializer(serializers.ModelSerializer):
             "is_free",
             "currency",
         ]
+
+    def get_name(self, obj):
+        lang = self.context["request"].headers.get("Accept-Language", "en")
+        return getattr(obj, f"name_{lang}")

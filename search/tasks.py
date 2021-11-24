@@ -20,7 +20,8 @@ def check_scraping_compatibility(store_pk: int) -> bool:
     logger.info(f"Starting to check compatibility for {config.name}")
     # Is the store still available?
     try:
-        res = requests.get(config.website)
+        headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+        res = requests.get(config.website, headers=headers)
         if res.status_code != 200:
             config.set_is_not_scarpable(f'Cannot reach {config.website} status code was: {res.status_code}')
             return False
@@ -45,13 +46,14 @@ def check_scraping_compatibility(store_pk: int) -> bool:
 
     for product_page in product_pages:
         data = scrape_product(product_page, config)
-        if 'name' not in data:
+        if not data.get("name"):
             config.set_is_not_scarpable(f'Could not find a name for the product at {product_page}')
             return False
 
-        if 'price' not in data:
+        if not data.get("price"):
             config.set_is_not_scarpable(f'Could not find a price for the product at {product_page}')
             return False
+        logger.info(f"Scraped {data}")
 
     config.set_is_scrapable()
     logger.info("{} is compatible with the scraping".format(config.name))

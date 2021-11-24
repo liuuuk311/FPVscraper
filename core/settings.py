@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'modeltranslation',
     'rest_framework',
     'django_elasticsearch_dsl',
     'django_elasticsearch_dsl_drf',
@@ -145,6 +146,7 @@ LANGUAGES = (
     ('it', gettext('Italiano')),
     ('en', gettext('English')),
 )
+MODELTRANSLATION_DEFAULT_LANGUAGE = 'en'
 
 
 #  ELASTICSEARCH

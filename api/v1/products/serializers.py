@@ -1,3 +1,4 @@
+from django.http import HttpRequest
 from django_elasticsearch_dsl_drf.serializers import DocumentSerializer
 from rest_framework import serializers
 
@@ -26,11 +27,11 @@ class ProductDocumentSerializer(DocumentSerializer):
             'best_shipping_method': self._get_best_shipping_method(obj)
         }
 
-    @staticmethod
-    def _get_best_shipping_method(obj):
+    def _get_best_shipping_method(self, obj):
+        lang = self.context["request"].headers.get("Accept-Language", "en")
         shipping_method = obj.store.best_shipping_method
         return {
-                "name": shipping_method.name,
+                "name": getattr(shipping_method, f"name_{lang}"),
                 "price": shipping_method.price,
                 "is_free": shipping_method.is_free,
                 "min_shipping_time": shipping_method.min_shipping_time,
