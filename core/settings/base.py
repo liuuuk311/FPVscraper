@@ -137,7 +137,7 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder'
 ]
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "staticfiles"),
+    "core/staticfiles"
 ]
 
 # CELERY STUFF
