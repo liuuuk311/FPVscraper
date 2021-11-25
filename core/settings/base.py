@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_elasticsearch_dsl',
     'django_elasticsearch_dsl_drf',
+    'admin_honeypot',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -160,7 +161,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_URLS_REGEX = r"^/api/.*$"
 CORS_ALLOW_CREDENTIALS = False
 
-
-# CORS_ALLOWED_ORIGINS = [
-#     "http://127.0.0.1:3000",
-# ]
+ADMINS = [
+    # ("Luca", "lucapalonca@gmail.com")
+]
