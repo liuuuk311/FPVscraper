@@ -1,4 +1,5 @@
 from datetime import datetime
+from threading import Thread
 from time import sleep
 
 import requests
@@ -72,7 +73,7 @@ def import_products_from_categories(store_pk):
     for category in categories:
         logger.info("Importing {} from {}".format(category, config.name))
         import_products(category.name, config)
-        sleep(15)
+        sleep(5)
 
     elapsed = datetime.now() - start
     logger.info("Imported new products for {} in ".format(config.name, str(elapsed)))
@@ -98,8 +99,14 @@ def re_import_product(product_id: int):
 def import_all_products_for_all_stores():
     start = datetime.now()
     for category in Category.objects.filter(is_active=True):
+        processes = []
         for store in Store.objects.filter(is_active=True):
-            import_products(category, store)
+            p = Thread(target=import_products, args=(category.name, store))
+            p.start()
+            processes.append(p)
+
+        for p in processes:
+            p.join()
 
     elapsed = datetime.now() - start
     logger.info("Imported ALL products in ".format(str(elapsed)))

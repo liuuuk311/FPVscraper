@@ -36,6 +36,8 @@ services:
       context: .
       dockerfile: docker/py37.Dockerfile
     command: celery -A core worker -l info
+    volumes:
+        - .:/code
     depends_on:
       - db
       - rabbit
