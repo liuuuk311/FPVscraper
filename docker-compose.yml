@@ -22,6 +22,7 @@ services:
     depends_on:
       - db
       - es
+      - app
       - rabbit
       - redis
 
@@ -38,13 +39,14 @@ services:
       context: .
       dockerfile: docker/py37.Dockerfile
     command: celery -A core worker -l info
+    environment:
+        - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
     volumes:
         - .:/code
     depends_on:
       - db
       - rabbit
       - redis
-
   es:
     build:
       context: .
