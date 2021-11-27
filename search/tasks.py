@@ -79,7 +79,7 @@ def import_products_from_categories(store_pk):
     logger.info("Imported new products for {} in ".format(config.name, str(elapsed)))
 
 
-def import_products(category: str, config: Store, delay: float = 5):
+def import_products(category: str, config: Store, delay: float = 10):
     urls = search(category, config, limit=None)
     for url in urls:
         data = scrape_product(url, config, fields=['name', 'price', 'image', 'is_available', 'variations'])

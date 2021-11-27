@@ -1,5 +1,7 @@
+from asyncio import sleep
 from typing import Dict
 
+import elasticsearch
 from celery.utils.log import get_task_logger
 from django.db.utils import DataError
 from django.utils import timezone
@@ -19,6 +21,10 @@ def create_or_update_product(store: Store, data: Dict) -> bool:
         product, created = Product.objects.update_or_create(id=product_id, defaults=data)
     except DataError as e:
         logger.error(f"Product not created. Error: {e}")
+        return False
+    except elasticsearch.exceptions.ConnectionError as e:
+        logger.error(f"Product not created, Elasticsearch is probably down, waiting for it to restart. Error: {e}")
+        sleep(20)
         return False
 
     return bool(created)
