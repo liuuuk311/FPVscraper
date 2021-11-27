@@ -93,7 +93,7 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
                 data[field] = price
                 data['currency'] = config.currency
 
-            elif field == 'variations':
+            elif field == 'variations' and not data["is_available"]:
                 data['is_available'] = None
             else:
                 data[field] = unicodedata.normalize("NFKD", unicode_str_text).strip()
