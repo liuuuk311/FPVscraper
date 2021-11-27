@@ -43,16 +43,6 @@ jobs:
           host: ${{ secrets.HOST }}
           user: deployer
           key: ${{ secrets.PRIVATE_KEY}}
-      - name: Collect Static
-        uses: fifsky/ssh-action@master
-        with:
-          command: |
-            cd ~/FPVscraper
-            git pull
-            docker-compose run --rm app python manage.py collectstatic --noinput
-          host: ${{ secrets.HOST }}
-          user: deployer
-          key: ${{ secrets.PRIVATE_KEY}}
       - name: Deploy
         uses: fifsky/ssh-action@master
         with:
