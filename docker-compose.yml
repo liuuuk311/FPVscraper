@@ -12,7 +12,7 @@ services:
       context: .
       dockerfile: docker/py37.Dockerfile
     restart: unless-stopped
-    command: python manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8000 --insecure
     environment:
         - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
     volumes:
