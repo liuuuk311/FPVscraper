@@ -67,7 +67,7 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
         style_class = getattr(config, "product_{}_class".format(field))
         html_tag = getattr(config, "product_{}_tag".format(field))
 
-        if style_class is None or html_tag is None:
+        if not bool(style_class) or not bool(html_tag):
             continue
 
         soup_obj = soup.find(html_tag, class_=style_class)
