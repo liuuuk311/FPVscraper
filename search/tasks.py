@@ -24,7 +24,7 @@ def check_scraping_compatibility(store_pk: int) -> bool:
         res = requests.get(config.website, headers=headers)
         if res.status_code == 503:
             config.scrape_with_js = True
-            config.save(update_fields="scrape_with_js")
+            config.save(update_fields=["scrape_with_js"])
         elif res.status_code != 200:
             config.set_is_not_scarpable(f'Cannot reach {config.website} status code was: {res.status_code}')
             return False
