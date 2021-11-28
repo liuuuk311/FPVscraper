@@ -21,6 +21,7 @@ logger = get_task_logger(__name__)
 def get_soup(url: str, js_enabled: bool = False) -> Optional[BeautifulSoup]:
     """ Get a soup object from a url """
     if js_enabled:
+        logger.info("Getting HTML through a browser in order to use JS")
         html = get_html(url)
     else:
         page = requests.get(url, headers={'User-Agent': get_random_user_agent()})
