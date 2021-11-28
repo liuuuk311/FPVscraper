@@ -81,7 +81,7 @@ class StoreAdmin(ImportCsv, ExportCsvMixin):
                     "website",
                     "region",
                     "locale",
-                    "scrape_with_js"
+                    "scrape_with_js",
                     "is_scrapable",
                     "not_scrapable_reason",
                 ]
