@@ -7,7 +7,7 @@ from requests.exceptions import ConnectionError
 from celery.task import task
 from celery.utils.log import get_task_logger
 
-from scraper import search, scrape_product
+from scraper.simple import search, scrape_product
 from search.helpers import create_or_update_product
 from search.models import Store, Category, Product
 
@@ -22,7 +22,10 @@ def check_scraping_compatibility(store_pk: int) -> bool:
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
         res = requests.get(config.website, headers=headers)
-        if res.status_code != 200:
+        if res.status_code == 503:
+            config.scrape_with_js = True
+            config.save(update_fields="scrape_with_js")
+        elif res.status_code != 200:
             config.set_is_not_scarpable(f'Cannot reach {config.website} status code was: {res.status_code}')
             return False
     except ConnectionError:

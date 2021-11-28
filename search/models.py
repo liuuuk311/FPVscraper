@@ -46,6 +46,7 @@ class Store(BaseModel):
         null=True,
         blank=True,
     )
+    scrape_with_js = models.BooleanField("Use JS when scraping", default=False)
 
     # Scraping config
     search_url = models.URLField("The base url of the search page")

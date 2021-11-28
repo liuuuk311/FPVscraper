@@ -12,18 +12,23 @@ import urllib
 from bs4 import BeautifulSoup
 from celery.utils.log import get_task_logger
 
+from scraper.browser import get_html
 from search.models import Store
 
 logger = get_task_logger(__name__)
 
 
-def get_soup(url: str) -> Optional[BeautifulSoup]:
+def get_soup(url: str, js_enabled: bool = False) -> Optional[BeautifulSoup]:
     """ Get a soup object from a url """
-    page = requests.get(url, headers={'User-Agent': get_random_user_agent()})
-    if page.status_code != 200:
-        return None
+    if js_enabled:
+        html = get_html(url)
+    else:
+        page = requests.get(url, headers={'User-Agent': get_random_user_agent()})
+        if page.status_code != 200:
+            return None
+        html = page.content
 
-    return BeautifulSoup(page.content, 'html.parser')
+    return BeautifulSoup(html, 'html.parser')
 
 
 def get_link(soup: BeautifulSoup, config: Store) -> str:
@@ -57,7 +62,7 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
     fields = fields or ['name', 'price', 'image']
 
     logger.info(f"Looking for {fields} on {url}")
-    soup = get_soup(url)
+    soup = get_soup(url, js_enabled=config.scrape_with_js)
     data = {}
 
     if not soup:
@@ -118,7 +123,7 @@ def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep
     scraped_urls = []
 
     while next_url:
-        soup = get_soup(next_url)
+        soup = get_soup(next_url, js_enabled=config.scrape_with_js)
         if not soup:
             return scraped_urls
 
