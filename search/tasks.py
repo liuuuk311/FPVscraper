@@ -77,6 +77,8 @@ def import_products_from_categories(store_pk):
 
     elapsed = datetime.now() - start
     logger.info("Imported new products for {} in ".format(config.name, str(elapsed)))
+    config.last_check = datetime.now()
+    config.save(update_fields=["last_check"])
 
 
 def import_products(category: str, config: Store, delay: float = 5):
