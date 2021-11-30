@@ -29,6 +29,7 @@ class ProductDocumentSerializer(DocumentSerializer):
 
     def _get_best_shipping_method(self, obj):
         lang = self.context["request"].headers.get("Accept-Language", "en").split("-")[0]
+        print(f"Serializing {obj.name} for store {obj.store}")
         shipping_method = obj.store.best_shipping_method
         return {
                 "name": getattr(shipping_method, f"name_{lang}", "name_en"),
