@@ -114,6 +114,8 @@ class StoreAdmin(ImportCsv, ExportCsvMixin):
                     "product_is_available_match",
                     "product_variations_class",
                     "product_variations_tag",
+                    "product_description_class",
+                    "product_description_tag",
                 ]
             },
         ),
@@ -176,6 +178,7 @@ class ProductAdmin(admin.ModelAdmin):
                 "fields": [
                     "image_tag",
                     "name",
+                    "description",
                     "is_available",
                     "price",
                     "currency",

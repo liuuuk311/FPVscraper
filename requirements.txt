@@ -1,13 +1,10 @@
 beautifulsoup4==4.9.1
 celery==4.4.6
-decorators==2.0.7
-Django==3.0.8
+Django>=3.0,<4.0
+psycopg2-binary
 pytz==2020.1
 redis==3.5.3
 requests
-sqlparse==0.3.1
-urllib3
-psycopg2~=2.8.6
 django-modeltranslation
 djangorestframework
 elasticsearch-dsl>=7.0.0,<8.0.0

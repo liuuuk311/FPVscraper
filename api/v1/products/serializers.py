@@ -1,8 +1,8 @@
-from django.http import HttpRequest
 from django_elasticsearch_dsl_drf.serializers import DocumentSerializer
 from rest_framework import serializers
 
 from search.documents import ProductDocument
+
 
 class ProductDocumentSerializer(DocumentSerializer):
     store = serializers.SerializerMethodField()

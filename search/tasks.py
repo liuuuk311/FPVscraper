@@ -87,7 +87,9 @@ def import_products_from_categories(store_pk):
 def import_products(category: str, config: Store, delay: float = 5):
     urls = search(category, config, limit=None)
     for url in urls:
-        data = scrape_product(url, config, fields=['name', 'price', 'image', 'is_available', 'variations'])
+        data = scrape_product(
+            url, config, fields=['name', 'price', 'image', 'is_available', 'variations', 'description']
+        )
         created = create_or_update_product(config, data)
         if created:
             sleep(delay)
@@ -96,7 +98,9 @@ def import_products(category: str, config: Store, delay: float = 5):
 @task(name='re_import_product')
 def re_import_product(product_id: int):
     product = Product.objects.get(id=product_id)
-    data = scrape_product(product.link, product.store, fields=['name', 'price', 'image', 'is_available', 'variations'])
+    data = scrape_product(
+        product.link, product.store, fields=['name', 'price', 'image', 'is_available', 'variations', 'description']
+    )
     create_or_update_product(product.store, data)
 
 

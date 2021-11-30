@@ -2,8 +2,7 @@ from django_elasticsearch_dsl_drf.constants import (
     SUGGESTER_COMPLETION,
 )
 from django_elasticsearch_dsl_drf.filter_backends import (
-    FilteringFilterBackend,
-    CompoundSearchFilterBackend,
+    CompoundSearchFilterBackend, DefaultOrderingFilterBackend, OrderingFilterBackend,
 )
 from django_elasticsearch_dsl_drf.viewsets import BaseDocumentViewSet
 from django_elasticsearch_dsl_drf.pagination import PageNumberPagination
@@ -19,16 +18,19 @@ class ProductViewSet(BaseDocumentViewSet):
     lookup_field = 'id'
 
     filter_backends = [
-        FilteringFilterBackend,
+        OrderingFilterBackend,
+        DefaultOrderingFilterBackend,
         CompoundSearchFilterBackend,
     ]
 
     search_fields = (
         'name',
+        'description'
     )
 
     filter_fields = {
         'name': 'name.raw',
+        'description': 'description.raw'
     }
 
     suggester_fields = {
@@ -39,3 +41,9 @@ class ProductViewSet(BaseDocumentViewSet):
             ],
         },
     }
+
+    ordering_fields = {
+        'price': None,
+    }
+
+    ordering = ('_score', 'price',)

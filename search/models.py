@@ -134,7 +134,18 @@ class Store(BaseModel):
         null=True,
         blank=True,
     )
-
+    product_description_class = models.CharField(
+        "The css class to know if the product description",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+    product_description_tag = models.CharField(
+        "The html tag to know if the product description",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return "{} ({})".format(

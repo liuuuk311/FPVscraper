@@ -3,6 +3,8 @@ from django_elasticsearch_dsl import (
     fields,
     Index,
 )
+from elasticsearch_dsl import analyzer
+
 from .models import Product, Store
 
 # https://sunscrapers.com/blog/how-to-use-elasticsearch-with-django/
@@ -12,6 +14,12 @@ product_index = Index('products')
 product_index.settings(
     number_of_shards=1,
     number_of_replicas=0
+)
+
+html_strip = analyzer('html_strip',
+    tokenizer="standard",
+    filter=["lowercase", "stop", "snowball"],
+    char_filter=["html_strip"]
 )
 
 
@@ -33,6 +41,13 @@ class ProductDocument(Document):
         attr='name',
         fields={
             'suggest': fields.Completion(),
+            'raw': fields.KeywordField(),
+        }
+    )
+    description = fields.TextField(
+        attr='description',
+        analyzer=html_strip,
+        fields={
             'raw': fields.KeywordField(),
         }
     )

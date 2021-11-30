@@ -3,7 +3,7 @@ from typing import Dict
 
 import elasticsearch
 from celery.utils.log import get_task_logger
-from django.db.utils import DataError
+from django.db.utils import DataError, IntegrityError
 from django.utils import timezone
 
 from search.models import Product, Store
@@ -16,10 +16,11 @@ def create_or_update_product(store: Store, data: Dict) -> bool:
     logger.info(f"ID: {product_id}")
     data["store"] = store
     data['import_date'] = timezone.now()
+    data.pop("variations", None)
     logger.info(f"Product data to create: {data}")
     try:
         product, created = Product.objects.update_or_create(id=product_id, defaults=data)
-    except DataError as e:
+    except (DataError, IntegrityError) as e:
         logger.error(f"Product not created. Error: {e}")
         return False
     except elasticsearch.exceptions.ConnectionError as e:

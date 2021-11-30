@@ -1,4 +1,4 @@
-version: '3'
+version: '3.9'
 
 services:
   db:
@@ -38,6 +38,8 @@ services:
     build:
       context: .
       dockerfile: docker/py37.Dockerfile
+      shm_size: '2gb'
+    shm_size: '2gb'
     command: celery -A core worker -l info
     environment:
         - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
