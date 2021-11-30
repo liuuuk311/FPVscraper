@@ -32,7 +32,7 @@ class ProductDocumentSerializer(DocumentSerializer):
         shipping_method = obj.store.best_shipping_method
         return {
                 "name": getattr(shipping_method, f"name_{lang}", "name_en"),
-                "price": shipping_method.price,
+                "price": getattr(shipping_method, "price", 0),
                 "is_free": shipping_method.is_free,
                 "min_shipping_time": shipping_method.min_shipping_time,
                 "min_price_free_shipping": shipping_method.min_price_free_shipping,
