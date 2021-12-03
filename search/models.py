@@ -15,15 +15,13 @@ class BaseModel(models.Model):
 class Store(BaseModel):
     """This model represent an online store"""
 
-    REGIONS = (("USA", "United States"), ("IT", "Italy"), ("OTH", "Other"))
-
     CURRENCIES = (("EUR", "Euro"), ("USD", "US Dollar"))
 
     LOCALE = (("en_US", "American"), ("it_IT", "European"))
 
     name = models.CharField("Name of the store", max_length=256)
     website = models.URLField("URL of the store")
-    region = models.CharField("Region of the store", max_length=3, choices=REGIONS)
+    country = models.ForeignKey("Country", related_name="stores", null=True, default=None, on_delete=models.SET_NULL)
     locale = models.CharField(
         "Locale used in the store",
         max_length=5,
@@ -255,3 +253,22 @@ class Product(BaseModel):
             self.store.name,
             self.price,
         )
+
+
+class Continent(BaseModel):
+    name = models.CharField("The name of the continent", max_length=128)
+
+    def __str__(self):
+        return self.name
+
+
+class Country(BaseModel):
+    name = models.CharField("The name of the country", max_length=128)
+    continent = models.ForeignKey(Continent, related_name="countries", on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name_plural = "Countries"
+
+    def __str__(self):
+        return self.name
+

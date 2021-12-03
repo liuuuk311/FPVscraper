@@ -16,7 +16,7 @@ from .tasks import (
     import_products_from_categories,
     re_import_product, import_all_products_for_all_stores,
 )
-from .models import Store, Category, Product, ShippingMethod
+from .models import Store, Category, Product, ShippingMethod, Continent, Country
 
 
 class ExportCsvMixin:
@@ -79,7 +79,7 @@ class StoreAdmin(ImportCsv, ExportCsvMixin):
                 "fields": [
                     "name",
                     "website",
-                    "region",
+                    "country",
                     "locale",
                     "scrape_with_js",
                     "is_scrapable",
@@ -269,7 +269,59 @@ class ShippingMethodAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):
         ] + urls
 
 
+class ContinentAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):
+    change_list_template = "admin/continent_changelist.html"
+    actions = ["export_as_csv"]
+
+    def create_obj_from_dict(self, data):
+        Continent.objects.create(
+            name_it=data.get("name_it"),
+            name_en=data.get("name_en"),
+            is_active=data.get("is_active", False)
+        )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        return [
+            url(
+                r"import/$",
+                self.admin_site.admin_view(self.import_csv),
+                name="continent_import_csv",
+            )
+        ] + urls
+
+
+class CountryAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):
+    change_list_template = "admin/country_changelist.html"
+    actions = ["export_as_csv"]
+
+    def create_obj_from_dict(self, data):
+        continent_name = data.pop("continent", None).split(' ')[0]
+        continent = Continent.objects.filter(name=continent_name).first()
+        if not continent:
+            return
+
+        Country.objects.create(
+            continent=continent,
+            name_it=data.get("name_it"),
+            name_en=data.get("name_en"),
+            is_active=data.get("is_active", False)
+        )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        return [
+            url(
+                r"import/$",
+                self.admin_site.admin_view(self.import_csv),
+                name="country_import_csv",
+            )
+        ] + urls
+
+
 admin.site.register(Store, StoreAdmin)
 admin.site.register(ShippingMethod, ShippingMethodAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Category)
+admin.site.register(Continent, ContinentAdmin)
+admin.site.register(Country, CountryAdmin)
