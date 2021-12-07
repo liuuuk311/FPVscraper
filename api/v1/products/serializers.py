@@ -1,3 +1,5 @@
+from textwrap import shorten
+
 from django_elasticsearch_dsl_drf.serializers import DocumentSerializer
 from rest_framework import serializers
 
@@ -7,12 +9,14 @@ from search.models import ClickedProduct, Product
 
 class ProductSerializer(serializers.ModelSerializer):
     store = serializers.SerializerMethodField()
+    display_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = (
             'id',
             'name',
+            'display_name',
             'price',
             'currency',
             'image',
@@ -20,6 +24,10 @@ class ProductSerializer(serializers.ModelSerializer):
             'is_available',
             'store',
         )
+
+    @staticmethod
+    def get_display_name(obj):
+        return shorten(obj.name, width=23, placeholder="...")
 
     def get_store(self, obj):
         return {
@@ -54,6 +62,7 @@ class ProductDocumentSerializer(ProductSerializer, DocumentSerializer):
         fields = (
             'id',
             'name',
+            'display_name',
             'price',
             'currency',
             'image',
