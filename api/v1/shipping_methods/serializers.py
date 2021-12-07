@@ -14,7 +14,7 @@ class ShippingMethodSerializer(serializers.ModelSerializer):
             "price",
             "min_shipping_time",
             "max_shipping_time",
-            "min_price_free_shipping",
+            "min_price_shipping_condition",
             "is_free",
             "currency",
         ]

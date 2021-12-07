@@ -16,7 +16,7 @@ from .tasks import (
     import_products_from_categories,
     re_import_product, import_all_products_for_all_stores,
 )
-from .models import Store, Category, Product, ShippingMethod, Continent, Country
+from .models import Store, Category, Product, ShippingMethod, Continent, Country, ClickedProduct, RequestedStore
 
 
 class ExportCsvMixin:
@@ -319,9 +319,30 @@ class CountryAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):
         ] + urls
 
 
+class ClickedProductAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        "product",
+        "clicked_after_seconds",
+        "search_query",
+        "page",
+        "created_at",
+    )
+    exclude = ("is_active", )
+
+
+class RequestedStoreAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        "website",
+        "is_already_present"
+    )
+    exclude = ("is_active",)
+
+
 admin.site.register(Store, StoreAdmin)
 admin.site.register(ShippingMethod, ShippingMethodAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Category)
 admin.site.register(Continent, ContinentAdmin)
 admin.site.register(Country, CountryAdmin)
+admin.site.register(ClickedProduct, ClickedProductAdmin)
+admin.site.register(RequestedStore, RequestedStoreAdmin)

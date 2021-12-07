@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django_elasticsearch_dsl',
     'django_elasticsearch_dsl_drf',
     'admin_honeypot',
+    'django_celery_beat',
 
     'django.contrib.admin',
     'django.contrib.auth',

@@ -197,19 +197,24 @@ class ShippingMethod(BaseModel):
     price = models.DecimalField(
         "Shipping Cost", null=True, blank=True, max_digits=5, decimal_places=2
     )
-    min_price_free_shipping = models.DecimalField(
-        "Minimum price to get free shipping",
+    min_price_shipping_condition = models.DecimalField(
+        "Minimum price to get this shipping",
         null=True,
         blank=True,
         max_digits=5,
         decimal_places=2,
     )
+    shipping_rule = models.ForeignKey(
+        "ShippingRule",
+        null=True,
+        blank=True,
+        related_name="shipping_methods",
+        on_delete=models.SET_NULL
+    )
 
     @property
     def is_free(self):
-        return (
-            self.price is None or self.price == 0
-        ) and self.min_price_free_shipping is not None
+        return self.price is None or self.price == 0
 
     def __str__(self):
         return f"{self.store.name} - {self.name}"
@@ -254,6 +259,10 @@ class Product(BaseModel):
             self.price,
         )
 
+    @property
+    def click_score(self):
+        return self.clicks.count()
+
 
 class Continent(BaseModel):
     name = models.CharField("The name of the continent", max_length=128)
@@ -272,3 +281,29 @@ class Country(BaseModel):
     def __str__(self):
         return self.name
 
+
+class ShippingRule(BaseModel):
+    name = models.CharField("The name of the shipping rule", max_length=128)
+    ship_to = models.ManyToManyField(Country)
+
+
+class ClickedProduct(BaseModel):
+    product = models.ForeignKey(Product, null=True, related_name="clicks", on_delete=models.SET_NULL)
+    clicked_after_seconds = models.FloatField("Clicked After Seconds")
+    search_query = models.CharField("Search query", max_length=512)
+    page = models.IntegerField("Result page")
+
+    class Meta:
+        verbose_name_plural = "Clicked Products"
+
+    def __str__(self):
+        return f"Clicked {self.product.name}"
+
+
+class RequestedStore(BaseModel):
+    website = models.URLField("URL of the store")
+    is_spam = models.BooleanField("Is Spam", default=False)
+    is_already_present = models.BooleanField("Is the store already present")
+
+    def __str__(self):
+        return f"Request for {self.website} {'(Already requested)' if self.is_already_present else ''}"

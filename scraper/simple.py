@@ -124,6 +124,7 @@ def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep
     scraped_urls = []
 
     while next_url:
+        logger.info(f"Searching {query} at {next_url}")
         soup = get_soup(next_url, js_enabled=config.scrape_with_js)
         if not soup:
             return scraped_urls
@@ -156,7 +157,6 @@ def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep
             next_url = next_link['href']
             if next_url and not next_url.startswith("http"):
                 next_url = urllib.parse.urljoin(config.website, next_url)
-            logger.info(f"Next Page {next_url}")
             sleep(seconds_of_sleep)
 
     return scraped_urls

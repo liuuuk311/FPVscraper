@@ -1,7 +1,7 @@
 from django.conf import settings
 from rest_framework import serializers
 
-from search.models import Store, Country
+from search.models import Store, Country, RequestedStore
 
 
 class StoreSerializer(serializers.ModelSerializer):
@@ -30,3 +30,13 @@ class CountrySerializer(serializers.ModelSerializer):
             return obj.name_en
 
         return getattr(obj, f"name_{lang}")
+
+
+class StoreSuggestionSerializer(serializers.ModelSerializer):
+    website = serializers.URLField()
+
+    class Meta:
+        model = RequestedStore
+        fields = [
+            "website"
+        ]

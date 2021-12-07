@@ -38,7 +38,7 @@ def check_scraping_compatibility(store_pk: int) -> bool:
     # Can we perform some query?
     queries = ['Motor', 'ESC', 'Goggles']
     for query in queries:
-        urls = search(query, config, limit=1)
+        urls = search(query, config)
         if not urls:
             config.set_is_not_scarpable(f'The search for {query} did not produced any url')
             return False
@@ -96,7 +96,7 @@ def import_products(category: str, config: Store, delay: float = 5):
 
 
 @task(name='re_import_product')
-def re_import_product(product_id: int):
+def re_import_product(product_id: str):
     product = Product.objects.get(id=product_id)
     data = scrape_product(
         product.link, product.store, fields=['name', 'price', 'image', 'is_available', 'variations', 'description']

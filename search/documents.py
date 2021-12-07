@@ -7,7 +7,6 @@ from elasticsearch_dsl import analyzer
 
 from .models import Product, Store
 
-# https://sunscrapers.com/blog/how-to-use-elasticsearch-with-django/
 
 product_index = Index('products')
 
@@ -16,7 +15,8 @@ product_index.settings(
     number_of_replicas=0
 )
 
-html_strip = analyzer('html_strip',
+html_strip = analyzer(
+    'html_strip',
     tokenizer="standard",
     filter=["lowercase", "stop", "snowball"],
     char_filter=["html_strip"]
@@ -34,7 +34,7 @@ class ProductDocument(Document):
             'min_shipping_time': fields.IntegerField(),
             'price': fields.FloatField(),
             'is_free': fields.BooleanField(),
-            'min_price_free_shipping': fields.FloatField(),
+            'min_price_shipping_condition': fields.FloatField(),
         })
     })
     name = fields.TextField(
@@ -51,15 +51,28 @@ class ProductDocument(Document):
             'raw': fields.KeywordField(),
         }
     )
+    is_available = fields.BooleanField(
+        attr='is_available',
+        fields={
+            'raw': fields.BooleanField(),
+        }
+    )
+
+    click_score = fields.IntegerField(
+        attr='click_score',
+        fields={
+            'raw': fields.IntegerField(),
+        }
+    )
 
     class Django:
         model = Product
         fields = [
+            'id',
             'price',
             'currency',
             'image',
             'link',
-            'is_available',
         ]
 
         related_models = [Store]

@@ -22,7 +22,6 @@ services:
     depends_on:
       - db
       - es
-      - worker
       - rabbit
       - redis
 
@@ -49,6 +48,21 @@ services:
       - db
       - rabbit
       - redis
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/py37.Dockerfile
+    command: celery -A core beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+        - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+    volumes:
+        - .:/code
+    depends_on:
+      - db
+      - rabbit
+      - redis
+
   es:
     build:
       context: .
