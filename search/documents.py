@@ -3,7 +3,7 @@ from django_elasticsearch_dsl import (
     fields,
     Index,
 )
-from elasticsearch_dsl import analyzer
+from elasticsearch_dsl import analyzer, token_filter
 
 from .models import Product, Store
 
@@ -20,6 +20,20 @@ html_strip = analyzer(
     tokenizer="standard",
     filter=["lowercase", "stop", "snowball"],
     char_filter=["html_strip"]
+)
+
+edge_ngram_completion_filter = token_filter(
+    'edge_ngram_completion_filter',
+    type="edge_ngram",
+    min_gram=1,
+    max_gram=20
+)
+
+
+edge_ngram_completion = analyzer(
+    "edge_ngram_completion",
+    tokenizer="standard",
+    filter=["lowercase", edge_ngram_completion_filter]
 )
 
 
@@ -40,7 +54,10 @@ class ProductDocument(Document):
     name = fields.TextField(
         attr='name',
         fields={
-            'suggest': fields.Completion(),
+            'suggest': fields.CompletionField(),
+            'edge_ngram_completion': fields.TextField(
+                analyzer=edge_ngram_completion
+            ),
             'raw': fields.KeywordField(),
         }
     )

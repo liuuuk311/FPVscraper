@@ -1,11 +1,12 @@
 from rest_framework import routers
 from rest_framework_nested import routers as nested_routers
 from .views import (
-    ProductViewSet, ClickedProductViewSet, BestProductViewSet
+    ProductViewSet, ClickedProductViewSet, BestProductViewSet, ProductAutocompleteViewSet
 )
 
 router = routers.SimpleRouter()
 router.register(r"products/best", BestProductViewSet, basename="api_v1_best_products")
+router.register(r"products/autocomplete", ProductAutocompleteViewSet, basename="api_v1_autocomplete_products")
 router.register(r"products", ProductViewSet, basename="api_v1_products")
 
 product_router = nested_routers.NestedSimpleRouter(router, r"products", lookup="product")

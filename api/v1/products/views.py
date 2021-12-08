@@ -1,14 +1,14 @@
-from datetime import datetime, timedelta
 
 from django.db.models import Count
 from django_elasticsearch_dsl_drf.constants import (
-    SUGGESTER_COMPLETION,
+    SUGGESTER_COMPLETION, FUNCTIONAL_SUGGESTER_COMPLETION_PREFIX,
+    FUNCTIONAL_SUGGESTER_COMPLETION_MATCH,
 )
 from django_elasticsearch_dsl_drf.filter_backends import (
     CompoundSearchFilterBackend, DefaultOrderingFilterBackend, OrderingFilterBackend, FilteringFilterBackend,
-    SearchFilterBackend,
+    SuggesterFilterBackend, FunctionalSuggesterFilterBackend,
 )
-from django_elasticsearch_dsl_drf.viewsets import BaseDocumentViewSet
+from django_elasticsearch_dsl_drf.viewsets import BaseDocumentViewSet, DocumentViewSet
 from django_elasticsearch_dsl_drf.pagination import PageNumberPagination
 from rest_framework import mixins, viewsets
 
@@ -41,15 +41,6 @@ class ProductViewSet(BaseDocumentViewSet):
         'is_available': 'is_available.raw',
     }
 
-    suggester_fields = {
-        'name_suggest': {
-            'field': 'name.suggest',
-            'suggesters': [
-                SUGGESTER_COMPLETION,
-            ],
-        },
-    }
-
     ordering_fields = {
         'price': 'price',
         'name': 'name.raw',
@@ -57,7 +48,28 @@ class ProductViewSet(BaseDocumentViewSet):
         'clicks': 'click_score',
     }
 
-    # ordering = ('_score', '-price')
+
+class ProductAutocompleteViewSet(DocumentViewSet):
+    document = ProductDocument
+
+    filter_backends = [
+        FunctionalSuggesterFilterBackend
+    ]
+
+    functional_suggester_fields = {
+        'name_suggest_match': {
+            'field': 'name.edge_ngram_completion',
+            'suggesters': [
+                FUNCTIONAL_SUGGESTER_COMPLETION_MATCH
+            ],
+            'default_suggester': FUNCTIONAL_SUGGESTER_COMPLETION_MATCH,
+            'options': {
+                'from': 0,
+                'size': 8,
+                'skip_duplicates': True,
+            },
+        }
+    }
 
 
 class ClickedProductViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
