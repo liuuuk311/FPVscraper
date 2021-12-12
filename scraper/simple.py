@@ -42,7 +42,7 @@ def get_link(soup: BeautifulSoup, config: Store) -> str:
 def parse_price(price_string: str, store_locale: str = "it_IT") -> Optional[float]:
     regex = r"(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))"
     pattern = re.compile(regex)
-    match = pattern.match(price_string.strip("€"))
+    match = pattern.match(price_string.strip("€").strip("$"))
     if match:
         locale.setlocale(locale.LC_NUMERIC, store_locale)
         return locale.atof(match.group(1))
@@ -99,7 +99,7 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
                 data[field] = price
                 data['currency'] = config.currency
 
-            elif field == 'variations' and not data["is_available"]:
+            elif field == 'variations' and not data.get("is_available", None):
                 data['is_available'] = None
             else:
                 data[field] = unicodedata.normalize("NFKD", unicode_str_text).strip()

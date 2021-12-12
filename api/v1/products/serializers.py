@@ -10,6 +10,7 @@ from search.models import ClickedProduct, Product
 class ProductSerializer(serializers.ModelSerializer):
     store = serializers.SerializerMethodField()
     display_name = serializers.SerializerMethodField()
+    best_shipping_method = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -23,6 +24,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'link',
             'is_available',
             'store',
+            'best_shipping_method',
         )
 
     @staticmethod
@@ -33,16 +35,10 @@ class ProductSerializer(serializers.ModelSerializer):
         return {
             'id': obj.store.id,
             'name': obj.store.name,
-            'best_shipping_method': self._get_best_shipping_method(obj)
         }
 
-    def _get_best_shipping_method(self, obj):
-        return self._serializer_best_shipping_method(obj.store.best_shipping_method())
-
-    def _serializer_best_shipping_method(self, shipping_method):
-        if not shipping_method:
-            return
-
+    def get_best_shipping_method(self, obj):
+        shipping_method = obj.best_shipping_method
         lang = self.context["request"].headers.get("Accept-Language", "en").split("-")[0]
         return {
             "name": getattr(shipping_method, f"name_{lang}", "name_en"),
@@ -55,6 +51,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class ProductDocumentSerializer(ProductSerializer, DocumentSerializer):
     store = serializers.SerializerMethodField()
+    best_shipping_method = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -69,10 +66,8 @@ class ProductDocumentSerializer(ProductSerializer, DocumentSerializer):
             'link',
             'is_available',
             'store',
+            'best_shipping_method',
         )
-
-    def _get_best_shipping_method(self, obj):
-        return self._serializer_best_shipping_method(obj.store.best_shipping_method)
 
 
 class ClickedProductSerializer(serializers.ModelSerializer):

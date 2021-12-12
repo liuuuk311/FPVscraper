@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'admin_honeypot',
     'django_celery_beat',
 
+    'search',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,7 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
-    'search',
+
 ]
 
 MIDDLEWARE = [

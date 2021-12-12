@@ -6,12 +6,12 @@ from celery.utils.log import get_task_logger
 from django.db.utils import DataError, IntegrityError
 from django.utils import timezone
 
-from search.models import Product, Store
+from search.models import Product, Store, ImportQuery
 
 logger = get_task_logger(__name__)
 
 
-def create_or_update_product(store: Store, data: Dict) -> bool:
+def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bool:
     if not data:
         return False
 
@@ -19,6 +19,7 @@ def create_or_update_product(store: Store, data: Dict) -> bool:
     logger.info(f"ID: {product_id}")
     data["store"] = store
     data['import_date'] = timezone.now()
+    data['import_query'] = query
     data.pop("variations", None)
     logger.info(f"Product data to create: {data}")
     try:

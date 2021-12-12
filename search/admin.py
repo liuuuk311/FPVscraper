@@ -1,10 +1,13 @@
 import csv
+import itertools
 from abc import abstractmethod
 from datetime import datetime
+from typing import List
 
 from django.conf.urls import url
 from django.contrib import admin, messages
-from django.http import HttpResponse
+from django.db.models import Count
+from django.http import StreamingHttpResponse
 from django.shortcuts import redirect, render
 from django.utils.html import format_html
 from core.translation import *
@@ -13,35 +16,113 @@ from modeltranslation.admin import TranslationAdmin
 from .forms import CsvImportForm
 from .tasks import (
     check_scraping_compatibility,
-    import_products_from_categories,
+    import_products_from_import_queries,
     re_import_product, import_all_products_for_all_stores,
 )
-from .models import Store, Category, Product, ShippingMethod, Continent, Country, ClickedProduct, RequestedStore
+from .models import (
+    Store,
+    ImportQuery,
+    Product,
+    ShippingMethod,
+    Continent,
+    Country,
+    ClickedProduct,
+    RequestedStore,
+    ShippingZone
+)
 
 
-class ExportCsvMixin:
+class PseudoBuffer:
+    """ An object that implements just the write method of the file-like interface """
+
+    @staticmethod
+    def write(value):
+        """ Write the value by returning it, instead of storing in a buffer """
+        return value
+
+
+class ExportCsv(admin.ModelAdmin):
+    actions = ["export_as_csv"]
+
+    def get_field_names(self) -> List:
+        return [field.name for field in self.model._meta.fields]
+
+    def get_row(self, obj) -> List:
+        return [getattr(obj, field) for field in self.get_field_names()]
+
+    def get_header(self) -> str:
+        return ",".join(self.get_field_names()) + "\n"
+
+    def get_name(self) -> str:
+        return f"Export_{datetime.today().strftime('%Y-%m-%d')}_{self.model._meta}"
+
     def export_as_csv(self, request, queryset):
-        meta = f"Export_{datetime.today().strftime('%Y-%m-%d')}_{self.model._meta}"
-        field_names = [field.name for field in self.model._meta.fields]
+        buffer = PseudoBuffer()
+        writer = csv.writer(buffer)
 
-        response = HttpResponse(content_type="text/csv")
-        response["Content-Disposition"] = "attachment; filename={}.csv".format(meta)
-        writer = csv.writer(response)
-
-        writer.writerow(field_names)
-        for obj in queryset:
-            row = writer.writerow([getattr(obj, field) for field in field_names])
-
-        return response
+        rows = itertools.chain(self.get_header(), (writer.writerow(self.get_row(obj)) for obj in queryset))
+        return StreamingHttpResponse(
+            rows,
+            content_type="text/csv",
+            headers={'Content-Disposition': f'attachment;filename="{self.get_name()}.csv"'}
+        )
 
     export_as_csv.short_description = "Export Selected"
+
+    def export_all(self, request):
+        return self.export_as_csv(request, self.model.objects.all())
+
+    def get_urls(self):
+        urls = super().get_urls()
+        return [
+            url(
+                r"export/$",
+                self.admin_site.admin_view(self.export_all),
+                name=self.export_url_name,
+            )
+        ] + urls
+
+    @property
+    def export_url_name(self):
+        return f"{self.model._meta.verbose_name_plural.replace(' ', '_')}_export_all"
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context.update({'export_url': self.export_url_name})
+        return super().changelist_view(request, extra_context=extra_context)
+
+
+class ManyToManyExport:
+    many_to_many_field: str
+
+    def many_to_many_fields_names(self):
+        return [
+            f"{self.many_to_many_field}_{i}"
+            for i in range(
+                self.model.objects.all().annotate(
+                    count=Count(self.many_to_many_field)
+                ).values_list("count", flat=True).order_by("-count")[0])
+        ]
+
+    def get_field_names(self):
+        return super().get_field_names() + self.many_to_many_fields_names()
+
+    def get_many_to_many_list(self, obj):
+        m2m = list(getattr(obj, self.many_to_many_field).all())
+        return m2m + ([''] * (len(self.many_to_many_fields_names()) - len(m2m)))
+
+    def get_row(self, obj):
+        many_to_many_fields_num = len(self.many_to_many_fields_names())
+        return [
+                   getattr(obj, field) for field in self.get_field_names()[:-many_to_many_fields_num]
+               ] + self.get_many_to_many_list(obj)
 
 
 class ImportCsv(admin.ModelAdmin):
 
     @abstractmethod
     def create_obj_from_dict(self, data):
-        pass
+        raise NotImplemented
 
     def import_csv(self, request):
         if request.method != "POST":
@@ -58,9 +139,35 @@ class ImportCsv(admin.ModelAdmin):
         self.message_user(request, "Your csv file has been imported!")
         return redirect("..")
 
+    def get_urls(self):
+        urls = super().get_urls()
+        return [
+            url(
+                r"import/$",
+                self.admin_site.admin_view(self.import_csv),
+                name=self.import_url_name,
+            )
+        ] + urls
 
-class StoreAdmin(ImportCsv, ExportCsvMixin):
-    change_list_template = "admin/store_changelist.html"
+    @property
+    def import_url_name(self):
+        return f"{self.model._meta.verbose_name_plural.replace(' ', '_')}_import_csv"
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context.update({'import_url': self.import_url_name})
+        return super().changelist_view(request, extra_context=extra_context)
+
+
+class ImportExportMixin(ImportCsv, ExportCsv):
+    change_list_template = "admin/import_export_changelist.html"
+
+    @abstractmethod
+    def create_obj_from_dict(self, data):
+        raise NotImplemented
+
+
+class StoreAdmin(ImportExportMixin):
     search_fields = ["name"]
     list_display = (
         "name",
@@ -81,6 +188,7 @@ class StoreAdmin(ImportCsv, ExportCsvMixin):
                     "website",
                     "country",
                     "locale",
+                    "currency",
                     "scrape_with_js",
                     "is_scrapable",
                     "not_scrapable_reason",
@@ -134,7 +242,7 @@ class StoreAdmin(ImportCsv, ExportCsvMixin):
 
     def import_product(self, request, queryset):
         for store in queryset:
-            import_products_from_categories.delay(store.pk)
+            import_products_from_import_queries.delay(store.pk)
 
         self.message_user(
             request,
@@ -147,18 +255,8 @@ class StoreAdmin(ImportCsv, ExportCsvMixin):
         data.pop("created_at", None)
         Store.objects.create(**data)
 
-    def get_urls(self):
-        urls = super().get_urls()
-        return [
-            url(
-                r"import/$",
-                self.admin_site.admin_view(self.import_csv),
-                name="store_import_csv",
-            )
-        ] + urls
 
-
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(ImportExportMixin):
     change_form_template = "admin/add_product.html"
     change_list_template = "admin/product_changelist.html"
     search_fields = ["name"]
@@ -169,7 +267,7 @@ class ProductAdmin(admin.ModelAdmin):
         "import_date",
         "store",
     )
-    readonly_fields = ("import_date", "image_tag", "id", "original_link")
+    readonly_fields = ("import_date", "image_tag", "id", "original_link", "import_query")
     list_filter = ("is_available", "store")
     fieldsets = [
         (
@@ -188,7 +286,7 @@ class ProductAdmin(admin.ModelAdmin):
         ),
         (
             "Advanced",
-            {"fields": ["original_link", "import_date", "id"]},
+            {"fields": ["original_link", "import_date", "import_query", "id"]},
         ),
     ]
 
@@ -237,12 +335,16 @@ class ProductAdmin(admin.ModelAdmin):
         return redirect("..")
 
 
-class ShippingMethodAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):
-    change_list_template = "admin/shipping_methods_changelist.html"
-    actions = ["export_as_csv"]
+class ShippingMethodAdmin(TranslationAdmin, ImportExportMixin):
+
+    list_display = (
+        "display_name",
+        "price",
+        "is_free"
+    )
 
     def create_obj_from_dict(self, data):
-        store_name = data.pop("store", None).split(' ')[0]
+        store_name = data.pop("store", "").split(' ')[0]
         store = Store.objects.filter(name=store_name).first()
         if not store:
             return
@@ -255,7 +357,8 @@ class ShippingMethodAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):
             max_shipping_time=data.get("max_shipping_time", None) or None,
             price=data.get("price", None) or None,
             min_price_free_shipping=data.get("min_price_free_shipping", None) or None,
-            is_active=data.get("is_active", False)
+            is_active=data.get("is_active", False),
+            shipping_zone_id=data.get("shipping_zone", None) or None
         )
 
     def get_urls(self):
@@ -269,9 +372,7 @@ class ShippingMethodAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):
         ] + urls
 
 
-class ContinentAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):
-    change_list_template = "admin/continent_changelist.html"
-    actions = ["export_as_csv"]
+class ContinentAdmin(TranslationAdmin, ImportExportMixin):
 
     def create_obj_from_dict(self, data):
         Continent.objects.create(
@@ -280,43 +381,21 @@ class ContinentAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):
             is_active=data.get("is_active", False)
         )
 
-    def get_urls(self):
-        urls = super().get_urls()
-        return [
-            url(
-                r"import/$",
-                self.admin_site.admin_view(self.import_csv),
-                name="continent_import_csv",
-            )
-        ] + urls
 
-
-class CountryAdmin(TranslationAdmin, ImportCsv, ExportCsvMixin):
-    change_list_template = "admin/country_changelist.html"
-    actions = ["export_as_csv"]
+class CountryAdmin(TranslationAdmin, ImportExportMixin):
 
     def create_obj_from_dict(self, data):
-        continent_name = data.pop("continent", None).split(' ')[0]
+        continent_name = data.pop("continent", "").split(' ')[0]
         continent = Continent.objects.filter(name=continent_name).first()
         if not continent:
             return
 
-        Country.objects.create(
+        Country.objects.get_or_create(
             continent=continent,
             name_it=data.get("name_it"),
             name_en=data.get("name_en"),
             is_active=data.get("is_active", False)
         )
-
-    def get_urls(self):
-        urls = super().get_urls()
-        return [
-            url(
-                r"import/$",
-                self.admin_site.admin_view(self.import_csv),
-                name="country_import_csv",
-            )
-        ] + urls
 
 
 class ClickedProductAdmin(admin.ModelAdmin):
@@ -338,11 +417,41 @@ class RequestedStoreAdmin(admin.ModelAdmin):
     exclude = ("is_active",)
 
 
+class ShippingZoneAdmin(ManyToManyExport, ImportExportMixin):
+    many_to_many_field = "ship_to"
+
+    def create_obj_from_dict(self, data):
+        sz = ShippingZone.objects.create(
+            is_active=data.get("is_active", False),
+            name=data.get("name")
+        )
+        for field in data:
+            if not field.startswith(self.many_to_many_field):
+                continue
+
+            country = Country.objects.filter(name=data.get(field))
+            if not country.exists():
+                continue
+
+            getattr(sz, self.many_to_many_field).add(country.first())
+
+
+class ImportQueryAdmin(ImportExportMixin):
+    readonly_fields = ("priority_score", )
+    exclude = ("products_clicks", )
+
+    def create_obj_from_dict(self, data):
+        data.pop("id", None)
+        data.pop("created_at", None)
+        ImportQuery.objects.create(**data)
+
+
 admin.site.register(Store, StoreAdmin)
 admin.site.register(ShippingMethod, ShippingMethodAdmin)
 admin.site.register(Product, ProductAdmin)
-admin.site.register(Category)
+admin.site.register(ImportQuery, ImportQueryAdmin)
 admin.site.register(Continent, ContinentAdmin)
 admin.site.register(Country, CountryAdmin)
 admin.site.register(ClickedProduct, ClickedProductAdmin)
 admin.site.register(RequestedStore, RequestedStoreAdmin)
+admin.site.register(ShippingZone, ShippingZoneAdmin)

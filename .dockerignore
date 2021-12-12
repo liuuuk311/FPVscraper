@@ -2,3 +2,4 @@
 .gitignore
 public
 venv
+backup_data

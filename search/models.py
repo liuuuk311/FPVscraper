@@ -197,6 +197,9 @@ class ShippingMethod(BaseModel):
     price = models.DecimalField(
         "Shipping Cost", null=True, blank=True, max_digits=5, decimal_places=2
     )
+    currency = models.CharField(
+        "Default Currency", max_length=3, choices=Store.CURRENCIES, default="EUR"
+    )
     min_price_shipping_condition = models.DecimalField(
         "Minimum price to get this shipping",
         null=True,
@@ -204,33 +207,65 @@ class ShippingMethod(BaseModel):
         max_digits=5,
         decimal_places=2,
     )
-    shipping_rule = models.ForeignKey(
-        "ShippingRule",
+    shipping_zone = models.ForeignKey(
+        "ShippingZone",
         null=True,
         blank=True,
         related_name="shipping_methods",
         on_delete=models.SET_NULL
     )
+    is_vat_included = models.BooleanField(
+        "Is VAT included?",
+        default=True
+    )
 
     @property
-    def is_free(self):
+    def is_free(self) -> bool:
         return self.price is None or self.price == 0
 
     def __str__(self):
+        return self.display_name
+
+    @property
+    def display_name(self) -> str:
         return f"{self.store.name} - {self.name}"
 
 
-class Category(BaseModel):
-    """This model represent a the category of a product"""
 
-    name = models.CharField("The name of the category", max_length=256)
+class ImportQuery(BaseModel):
+    """This model is used to import a product"""
+    PRIORITY_LOW = 0
+    PRIORITY_MEDIUM = 1
+    PRIORITY_HIGH = 2
+    PRIORITY_CHOICES = (
+        (PRIORITY_LOW, "Low"),
+        (PRIORITY_MEDIUM, "Medium"),
+        (PRIORITY_HIGH, "High"),
+    )
+
+    text = models.CharField("The text to search on the stores", max_length=256)
+    priority = models.IntegerField("Import Priority", choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM, max_length=6)
+    products_clicks = models.IntegerField("Clicks of the imported products", default=0)
+    priority_score = models.FloatField("Priority Score", default=PRIORITY_MEDIUM)
 
     class Meta:
-        verbose_name = "Category"
-        verbose_name_plural = "Categories"
+        verbose_name = "Import Query"
+        verbose_name_plural = "Import Queries"
+        ordering = ("-priority_score",)
 
     def __str__(self):
-        return self.name
+        return f"{self.text} ({self.get_priority_display()})"
+
+    def update_priority_score(self, commit=True):
+        self.products_clicks += 1
+        self.priority_score = self.priority + self.products_clicks / 100
+
+        if commit:
+            self.save(update_fields=["products_clicks", "priority_score"])
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        self.update_priority_score(commit=False)
+        super().save(force_insert, force_update, using, update_fields)
 
 
 class Product(BaseModel):
@@ -251,6 +286,13 @@ class Product(BaseModel):
         "Is available", default=True, null=True, blank=True
     )
     import_date = models.DateTimeField("Import date", auto_now=True, auto_created=True)
+    import_query = models.ForeignKey(
+        ImportQuery,
+        related_name="products",
+        on_delete=models.SET_NULL,
+        null=True,
+        default=None
+    )
 
     def __str__(self):
         return "{} from {}, price: {}".format(
@@ -260,8 +302,16 @@ class Product(BaseModel):
         )
 
     @property
-    def click_score(self):
+    def click_score(self) -> int:
         return self.clicks.count()
+
+    @property
+    def best_shipping_method(self) -> ShippingMethod:
+        free_shipping = self.store.shipping_methods.filter(price__isnull=True).first()
+        if self.price >= free_shipping.min_price_shipping_condition:
+            return free_shipping
+
+        return self.store.best_shipping_method()
 
 
 class Continent(BaseModel):
@@ -282,9 +332,12 @@ class Country(BaseModel):
         return self.name
 
 
-class ShippingRule(BaseModel):
-    name = models.CharField("The name of the shipping rule", max_length=128)
+class ShippingZone(BaseModel):
+    name = models.CharField("The name of the shipping zone", max_length=128)
     ship_to = models.ManyToManyField(Country)
+
+    def __str__(self):
+        return self.name
 
 
 class ClickedProduct(BaseModel):
@@ -298,6 +351,11 @@ class ClickedProduct(BaseModel):
 
     def __str__(self):
         return f"Clicked {self.product.name}"
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        if not self.pk:
+            self.product.import_query.update_priority_score()
+        super().save(force_insert, force_update, using, update_fields)
 
 
 class RequestedStore(BaseModel):

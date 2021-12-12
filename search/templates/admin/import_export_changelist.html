@@ -1,0 +1,8 @@
+{% extends 'admin/export_all_changelist.html' %}
+
+{% block object-tools-items %}
+    {% with "admin:"|add:import_url as import_url_name %}
+        <li><a href="{% url import_url_name %}" class="btn-link">Import CSV</a></li>
+    {% endwith %}
+    {{ block.super }}
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "admin/base.html" %}
+{% block extrastyle %}{{ block.super }}
+<style>
+:root {
+    --primary: #272727;
+    --secondary: #f5840b;
+    --accent: #fff;
+    --primary-fg: #fff;
+    --link-fg: #f5840b;
+    --link-selected-fg: #f5840b;
+    --link-hover-color: #f6b863;
+    --breadcrumbs-fg: #f6b863;
+    --button-hover-bg: #d28010;
+    --default-button-hover-bg: #d28010;
+    --selected-row: #985b0a;
+}
+</style>
+{% endblock %}
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+ 
+{% block branding %}
+<h1 id="site-name" style="font-weight: bold"><a href="{% url 'admin:index' %}">FPV Finder Administration</a></h1>
+{% endblock %}
+ 
+{% block nav-global %}{% endblock %}

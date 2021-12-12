@@ -9,7 +9,7 @@ from celery.utils.log import get_task_logger
 
 from scraper.simple import search, scrape_product
 from search.helpers import create_or_update_product
-from search.models import Store, Category, Product
+from search.models import Store, ImportQuery, Product
 
 logger = get_task_logger(__name__)
 
@@ -36,7 +36,7 @@ def check_scraping_compatibility(store_pk: int) -> bool:
 
     product_pages = []
     # Can we perform some query?
-    queries = ['Motor', 'ESC', 'Goggles']
+    queries = ['Motor', 'ESC']
     for query in queries:
         urls = search(query, config)
         if not urls:
@@ -63,19 +63,17 @@ def check_scraping_compatibility(store_pk: int) -> bool:
     return True
 
 
-@task(name='import_products_from_categories')
-def import_products_from_categories(store_pk):
+@task(name='import_products_from_import_queries')
+def import_products_from_import_queries(store_pk):
     config = Store.objects.get(pk=store_pk)
     if not config.is_scrapable:
         logger.warning('{} is not compatible. Import cancelled'.format(config))
         return
 
-    categories = Category.objects.filter(is_active=True)
-
     start = datetime.now()
-    for category in categories:
-        logger.info("Importing {} from {}".format(category, config.name))
-        import_products(category.name, config)
+    for query in ImportQuery.objects.filter(is_active=True):
+        logger.info("Importing {} from {}".format(query, config.name))
+        import_products(query, config)
         sleep(5)
 
     elapsed = datetime.now() - start
@@ -84,13 +82,13 @@ def import_products_from_categories(store_pk):
     config.save(update_fields=["last_check"])
 
 
-def import_products(category: str, config: Store, delay: float = 5):
-    urls = search(category, config, limit=None)
+def import_products(query: ImportQuery, config: Store, delay: float = 5):
+    urls = search(query.text, config, limit=None)
     for url in urls:
         data = scrape_product(
             url, config, fields=['name', 'price', 'image', 'is_available', 'variations', 'description']
         )
-        created = create_or_update_product(config, data)
+        created = create_or_update_product(config, data, query)
         if created:
             sleep(delay)
 
@@ -107,10 +105,10 @@ def re_import_product(product_id: str):
 @task(name="import_all_products_for_all_stores")
 def import_all_products_for_all_stores():
     start = datetime.now()
-    for category in Category.objects.filter(is_active=True):
+    for query in ImportQuery.objects.filter(is_active=True):
         processes = []
         for store in Store.objects.filter(is_active=True):
-            p = Thread(target=import_products, args=(category.name, store))
+            p = Thread(target=import_products, args=(query, store))
             p.start()
             processes.append(p)
 

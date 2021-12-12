@@ -1,0 +1,6 @@
+id,created_at,is_active,name,name_it,name_en
+3,2021-12-03 06:33:01.761217+00:00,True,Europe,Europa,Europe
+4,2021-12-10 06:22:36.549594+00:00,True,Africa,Africa,Africa
+5,2021-12-10 06:22:42.141719+00:00,True,America,America,America
+6,2021-12-10 06:22:47.106857+00:00,True,Asia,Asia,Asia
+7,2021-12-10 18:35:04.679186+00:00,True,N/A,N/A,N/A

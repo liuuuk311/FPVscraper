@@ -1,0 +1,56 @@
+id,created_at,is_active,name,name_it,name_en,continent
+1,2021-12-03 06:33:19.537286+00:00,True,Italy,Italia,Italy,Europe
+2,2021-12-03 14:48:02.401739+00:00,True,France,Francia,France,Europe
+56,2021-12-10 06:41:50.805622+00:00,True,Belgium,Belgio,Belgium,Europe
+57,2021-12-10 06:41:50.812057+00:00,True,Germany,Germania,Germany,Europe
+58,2021-12-10 06:41:50.819108+00:00,True,Greece,Grecia,Greece,Europe
+59,2021-12-10 06:41:50.826813+00:00,True,San Marino,San Marino,San Marino,Europe
+60,2021-12-10 06:41:50.832455+00:00,True,Luxembour,Lussemburgo,Luxembour,Europe
+61,2021-12-10 06:41:50.839256+00:00,True,Netherlands,Olanda,Netherlands,Europe
+62,2021-12-10 06:41:50.844473+00:00,True,Spain,Spagna,Spain,Europe
+63,2021-12-10 06:41:50.849213+00:00,True,United Kingdom,Regno Unito,United Kingdom,Europe
+64,2021-12-10 06:41:50.854947+00:00,True,Austria,Austria,Austria,Europe
+65,2021-12-10 06:41:50.860679+00:00,True,Denmark,Danimarca,Denmark,Europe
+66,2021-12-10 06:41:50.866996+00:00,True,Finland,Finlandia,Finland,Europe
+67,2021-12-10 06:41:50.873053+00:00,True,Ireland,Irlanda,Ireland,Europe
+68,2021-12-10 06:41:50.878541+00:00,True,Portugal,Portogallo,Portugal,Europe
+69,2021-12-10 06:41:50.884032+00:00,True,Sweden,Svezia,Sweden,Europe
+70,2021-12-10 06:41:50.890088+00:00,True,Bulgaria,Bulgaria,Bulgaria,Europe
+71,2021-12-10 06:41:50.897178+00:00,True,Croatia,Croazia,Croatia,Europe
+72,2021-12-10 06:41:50.903093+00:00,True,Cyprus,Cipro,Cyprus,Europe
+73,2021-12-10 06:41:50.908532+00:00,True,Czech Republic,Repubblica Ceca,Czech Republic,Europe
+74,2021-12-10 06:41:50.913504+00:00,True,Estonia,Estonia,Estonia,Europe
+75,2021-12-10 06:41:50.918774+00:00,True,Hungary,Ungheria,Hungary,Europe
+76,2021-12-10 06:41:50.924488+00:00,True,Latvia,Lettonia,Latvia,Europe
+77,2021-12-10 06:41:50.929651+00:00,True,Lithuania,Lituania,Lithuania,Europe
+78,2021-12-10 06:41:50.935652+00:00,True,Malta,Malta,Malta,Europe
+79,2021-12-10 06:41:50.940537+00:00,True,Poland ,Polonia,Poland ,Europe
+80,2021-12-10 06:41:50.945463+00:00,True,Romania,Romania,Romania,Europe
+81,2021-12-10 06:41:50.951016+00:00,True,Ukraine,Ucraina,Ukraine,Europe
+82,2021-12-10 06:41:50.956000+00:00,True,Slovakia,Slovacchia,Slovakia,Europe
+83,2021-12-10 06:41:50.960451+00:00,True,Sloveni,Slovenia,Sloveni,Europe
+84,2021-12-10 06:41:50.966067+00:00,True,Albania,Albania,Albania,Europe
+85,2021-12-10 06:41:50.971529+00:00,True,Bosnia,Bosnia,Bosnia,Europe
+86,2021-12-10 06:41:50.976574+00:00,True,Israel,Israele,Israel,Europe
+87,2021-12-10 06:41:50.981805+00:00,True,Iceland,Islanda,Iceland,Europe
+88,2021-12-10 06:41:50.987587+00:00,True,Liechtenstein,Liechtenstein,Liechtenstein,Europe
+89,2021-12-10 06:41:50.992990+00:00,True,Macedonia,Macedonia,Macedonia,Europe
+90,2021-12-10 06:41:50.997951+00:00,True,Moldova,Moldavia,Moldova,Europe
+91,2021-12-10 06:41:51.003609+00:00,True,Montenegro,Montenegro,Montenegro,Europe
+92,2021-12-10 06:41:51.008606+00:00,True,Norway,Norvegia,Norway,Europe
+93,2021-12-10 06:41:51.014747+00:00,True,Serbia,Serbia,Serbia,Europe
+94,2021-12-10 06:41:51.020885+00:00,True,Switzerland,Svizzera,Switzerland,Europe
+95,2021-12-10 06:41:51.025716+00:00,True,Turkey,Turchia,Turkey,Asia
+96,2021-12-10 06:41:51.030847+00:00,True,Canada,Canada,Canada,America
+97,2021-12-10 06:41:51.035884+00:00,True,United States,Stati Uniti,United States,America
+98,2021-12-10 06:41:51.040648+00:00,True,Mexico,Messico,Mexico,America
+99,2021-12-10 06:41:51.045340+00:00,True,South Africa,Sud Africa,South Africa,Africa
+100,2021-12-10 06:41:51.051464+00:00,True,Algeria,Algeria,Algeria,Africa
+101,2021-12-10 06:41:51.057551+00:00,True,Bengladesh,Bengladesh,Bengladesh,Asia
+102,2021-12-10 06:41:51.062870+00:00,True,Cambodia,Cambogia,Cambodia,Asia
+103,2021-12-10 06:41:51.069343+00:00,True,China,Cina,China,Asia
+104,2021-12-10 06:41:51.075029+00:00,True,South Korea,Corea del Sud,South Korea,Asia
+105,2021-12-10 06:41:51.079254+00:00,True,Egypt,Egitto,Egypt,Africa
+106,2021-12-10 06:41:51.084172+00:00,True,United Arab Emirates,Emirati Arabi Uniti,United Arab Emirates,Africa
+107,2021-12-10 06:41:51.088983+00:00,True,India,India,India,Asia
+108,2021-12-10 18:35:24.278429+00:00,True,Worldwide,Internazionale,Worldwide,N/A
