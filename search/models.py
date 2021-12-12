@@ -244,7 +244,7 @@ class ImportQuery(BaseModel):
     )
 
     text = models.CharField("The text to search on the stores", max_length=256)
-    priority = models.IntegerField("Import Priority", choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM, max_length=6)
+    priority = models.IntegerField("Import Priority", choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM)
     products_clicks = models.IntegerField("Clicks of the imported products", default=0)
     priority_score = models.FloatField("Priority Score", default=PRIORITY_MEDIUM)
 

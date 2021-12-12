@@ -253,7 +253,8 @@ class StoreAdmin(ImportExportMixin):
     def create_obj_from_dict(self, data):
         data.pop("id", None)
         data.pop("created_at", None)
-        Store.objects.create(**data)
+        data["country"] = Country.objects.filter(name=data.get("country")).first()
+        Store.objects.update_or_create(website=data.get("website"), defaults=data)
 
 
 class ProductAdmin(ImportExportMixin):
@@ -342,6 +343,7 @@ class ShippingMethodAdmin(TranslationAdmin, ImportExportMixin):
         "price",
         "is_free"
     )
+    readonly_fields = ("created_at", )
 
     def create_obj_from_dict(self, data):
         store_name = data.pop("store", "").split(' ')[0]
@@ -349,16 +351,31 @@ class ShippingMethodAdmin(TranslationAdmin, ImportExportMixin):
         if not store:
             return
 
+        shipping_zone = ShippingZone.objects.filter(name=data.get("shipping_zone")).first()
+
+        try:
+            price = float(data.get("price"))
+        except (TypeError, ValueError):
+            price = None
+
+        try:
+            min_price_shipping_condition = float(data.get("min_price_shipping_condition"))
+        except (TypeError, ValueError):
+            min_price_shipping_condition = None
+
         ShippingMethod.objects.create(
             store=store,
+            shipping_zone=shipping_zone,
+            name=data.get("name"),
             name_it=data.get("name_it"),
             name_en=data.get("name_en"),
             min_shipping_time=data.get("min_shipping_time", None) or None,
             max_shipping_time=data.get("max_shipping_time", None) or None,
-            price=data.get("price", None) or None,
-            min_price_free_shipping=data.get("min_price_free_shipping", None) or None,
+            currency=data.get("currency"),
+            price=price,
+            min_price_shipping_condition=min_price_shipping_condition,
             is_active=data.get("is_active", False),
-            shipping_zone_id=data.get("shipping_zone", None) or None
+            is_vat_included=data.get("is_vat_included", True),
         )
 
     def get_urls(self):
@@ -373,6 +390,7 @@ class ShippingMethodAdmin(TranslationAdmin, ImportExportMixin):
 
 
 class ContinentAdmin(TranslationAdmin, ImportExportMixin):
+    readonly_fields = ("created_at",)
 
     def create_obj_from_dict(self, data):
         Continent.objects.create(
@@ -383,6 +401,7 @@ class ContinentAdmin(TranslationAdmin, ImportExportMixin):
 
 
 class CountryAdmin(TranslationAdmin, ImportExportMixin):
+    readonly_fields = ("created_at",)
 
     def create_obj_from_dict(self, data):
         continent_name = data.pop("continent", "").split(' ')[0]
@@ -418,6 +437,7 @@ class RequestedStoreAdmin(admin.ModelAdmin):
 
 
 class ShippingZoneAdmin(ManyToManyExport, ImportExportMixin):
+    readonly_fields = ("created_at",)
     many_to_many_field = "ship_to"
 
     def create_obj_from_dict(self, data):
@@ -437,7 +457,7 @@ class ShippingZoneAdmin(ManyToManyExport, ImportExportMixin):
 
 
 class ImportQueryAdmin(ImportExportMixin):
-    readonly_fields = ("priority_score", )
+    readonly_fields = ("priority_score", "created_at",)
     exclude = ("products_clicks", )
 
     def create_obj_from_dict(self, data):
