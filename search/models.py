@@ -307,7 +307,9 @@ class Product(BaseModel):
 
     @property
     def best_shipping_method(self) -> ShippingMethod:
-        free_shipping = self.store.shipping_methods.filter(price__isnull=True).first()
+        free_shipping = self.store.shipping_methods.filter(
+            price__isnull=True, min_price_shipping_condition__isnull=False
+        ).first()
         if self.price >= free_shipping.min_price_shipping_condition:
             return free_shipping
 
