@@ -1,6 +1,7 @@
 {% extends 'admin/import_export_changelist.html' %}
 
 {% block object-tools-items %}
-    <li><a href="{% url 'admin:product_import_all' %}" class="btn-link">Import from all stores</a></li>
+    <li><a href="{% url 'admin:product_import_all' %}" class="btn-link">Re-Import all</a></li>
+    <li><a href="{% url 'admin:product_import_all_with_queries' %}" class="btn-link">Import all with queries</a></li>
     {{ block.super }}
 {% endblock %}

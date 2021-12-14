@@ -151,7 +151,7 @@ class Store(BaseModel):
             self.website,
         )
 
-    def set_is_not_scarpable(self, reason: str):
+    def set_is_not_scrapable(self, reason: str):
         self.not_scrapable_reason = reason
         self.last_check = timezone.now()
         self.is_scrapable = False
