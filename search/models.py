@@ -35,9 +35,6 @@ class Store(BaseModel):
     last_check = models.DateTimeField("Last check", null=True)
 
     is_scrapable = models.BooleanField("Is the store still compatible?", default=False)
-    is_scrapable.short_description = "Is the store still compatible?"
-    is_scrapable.boolean = True
-
     not_scrapable_reason = models.CharField(
         "The reason why this store was not scrapable",
         max_length=512,
