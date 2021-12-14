@@ -15,6 +15,7 @@ services:
     command: python manage.py runserver 0.0.0.0:8000 --insecure
     environment:
         - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+        - TELEGRAM_BOT_API_KEY=${TELEGRAM_BOT_API_KEY}
     volumes:
         - .:/code
     ports:
@@ -42,6 +43,7 @@ services:
     command: celery -A core worker -l info
     environment:
         - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+        - TELEGRAM_BOT_API_KEY=${TELEGRAM_BOT_API_KEY}
     volumes:
         - .:/code
     depends_on:
@@ -56,6 +58,7 @@ services:
     command: celery -A core beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
     environment:
         - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+        - TELEGRAM_BOT_API_KEY=${TELEGRAM_BOT_API_KEY}
     volumes:
         - .:/code
     depends_on:

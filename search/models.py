@@ -17,7 +17,9 @@ class Store(BaseModel):
 
     CURRENCIES = (("EUR", "Euro"), ("USD", "US Dollar"))
 
-    LOCALE = (("en_US", "American"), ("it_IT", "European"))
+    LOCALE_US = "en_US"
+    LOCALE_EU = "it_IT"
+    LOCALE = ((LOCALE_US, "American"), (LOCALE_EU, "European"))
 
     name = models.CharField("Name of the store", max_length=256)
     website = models.URLField("URL of the store")
@@ -26,7 +28,7 @@ class Store(BaseModel):
         "Locale used in the store",
         max_length=5,
         choices=LOCALE,
-        default="it_IT",
+        default=LOCALE_EU,
         help_text="If the store uses , as decimal separator choose European",
     )
     currency = models.CharField(
@@ -218,7 +220,7 @@ class ShippingMethod(BaseModel):
 
     @property
     def is_free(self) -> bool:
-        return self.price is None or self.price == 0
+        return not bool(self.price)
 
     def __str__(self):
         return self.display_name
@@ -226,7 +228,6 @@ class ShippingMethod(BaseModel):
     @property
     def display_name(self) -> str:
         return f"{self.store.name} - {self.name}"
-
 
 
 class ImportQuery(BaseModel):

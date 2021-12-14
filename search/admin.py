@@ -17,7 +17,7 @@ from .forms import CsvImportForm
 from .tasks import (
     check_scraping_compatibility,
     import_products_from_import_queries,
-    re_import_product, import_all_products_for_all_stores,
+    re_import_product, import_all_products_for_all_stores, re_import_all_products,
 )
 from .models import (
     Store,
@@ -311,10 +311,15 @@ class ProductAdmin(ImportExportMixin):
                 name="product_import",
             ),
             url(
-               r"import_from_all_stores/$",
+               r"import_all_with_queries/$",
                self.admin_site.admin_view(self.import_from_all_stores),
+               name="product_import_all_with_queries",
+            ),
+            url(
+               r"import_all/$",
+               self.admin_site.admin_view(self.import_all),
                name="product_import_all",
-            )
+           )
         ] + urls
 
     def product_import(self, request, product_id):
@@ -332,6 +337,15 @@ class ProductAdmin(ImportExportMixin):
         messages.success(
             request,
             "Importing ALL products for every store. It's gonna take a while",
+        )
+        return redirect("..")
+
+    @staticmethod
+    def import_all(request):
+        re_import_all_products.delay()
+        messages.success(
+            request,
+            "Re Importing ALL products. It's gonna take a while",
         )
         return redirect("..")
 
