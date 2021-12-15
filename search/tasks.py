@@ -118,7 +118,7 @@ def import_all_products_for_all_stores():
             p.join()
 
     elapsed = datetime.now() - start
-    logger.info("Imported ALL products in ".format(str(elapsed)), send_to_telegram=True)
+    logger.info("Imported new and old products in ".format(str(elapsed)), send_to_telegram=True)
 
 
 @task(name="re_import_all_products")
