@@ -7,7 +7,8 @@ from requests.exceptions import ConnectionError
 from celery.task import task
 
 from scraper.simple import search, scrape_product
-from search.helpers import create_or_update_product, logger
+from search.helpers import create_or_update_product
+from helpers.logger import logger
 from search.models import Store, ImportQuery, Product
 
 
