@@ -1,12 +1,11 @@
 
 from django.db.models import Count
 from django_elasticsearch_dsl_drf.constants import (
-    SUGGESTER_COMPLETION, FUNCTIONAL_SUGGESTER_COMPLETION_PREFIX,
     FUNCTIONAL_SUGGESTER_COMPLETION_MATCH,
 )
 from django_elasticsearch_dsl_drf.filter_backends import (
     CompoundSearchFilterBackend, DefaultOrderingFilterBackend, OrderingFilterBackend, FilteringFilterBackend,
-    SuggesterFilterBackend, FunctionalSuggesterFilterBackend,
+    FunctionalSuggesterFilterBackend,
 )
 from django_elasticsearch_dsl_drf.viewsets import BaseDocumentViewSet, DocumentViewSet
 from django_elasticsearch_dsl_drf.pagination import PageNumberPagination

@@ -39,6 +39,9 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def get_best_shipping_method(self, obj):
         shipping_method = obj.best_shipping_method
+        if not shipping_method:
+            return
+
         lang = self.context["request"].headers.get("Accept-Language", "en").split("-")[0]
         return {
             "name": getattr(shipping_method, f"name_{lang}", "name_en"),
