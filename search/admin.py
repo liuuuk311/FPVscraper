@@ -366,7 +366,8 @@ class ShippingMethodAdmin(TranslationAdmin, ImportExportMixin):
     readonly_fields = ("created_at", )
 
     def create_obj_from_dict(self, data):
-        store_name = data.pop("store", "").split(' ')[0]
+        store_name = data.pop("store", "").split(' (')[0]
+        print(f"store name {store_name}")
         store = Store.objects.filter(name=store_name).first()
         if not store:
             return

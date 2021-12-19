@@ -39,6 +39,13 @@ def get_link(soup: BeautifulSoup, config: Store) -> str:
     return href
 
 
+def format_image_link(text: str) -> str:
+    text = text.format(width=500)
+    if text.startswith("//"):
+        text = f"https{text}"
+    return text
+
+
 def parse_price(price_string: str, store_locale: str = "it_IT") -> Optional[float]:
     regex = r"(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))"
     pattern = re.compile(regex)
@@ -92,7 +99,8 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
             if field == 'image':
                 if soup_obj.name != "img":
                     soup_obj = soup_obj.find("img")
-                data[field] = soup_obj['data-src'] if soup_obj.has_attr('data-src') else soup_obj['src']
+                img_link = soup_obj['data-src'] if soup_obj.has_attr('data-src') else soup_obj['src']
+                data[field] = format_image_link(img_link)
 
             elif field == 'price':
                 price = parse_price(unicode_str_text.strip(), store_locale=config.locale)
