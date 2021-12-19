@@ -268,7 +268,13 @@ class ProductAdmin(ImportExportMixin):
         "import_date",
         "store",
     )
-    readonly_fields = ("import_date", "image_tag", "id", "original_link", "import_query")
+    readonly_fields = (
+        "import_date",
+        "image_tag",
+        "id",
+        "original_link",
+        "import_query"
+    )
     list_filter = ("is_available", "store")
     fieldsets = [
         (
@@ -297,7 +303,7 @@ class ProductAdmin(ImportExportMixin):
 
     def image_tag(self, obj):
         return format_html(
-            f'<img src="{obj.image}" height="200" alt="Image of {obj.name}"/>'
+            f'<img src="{obj.image}" width="300" height="300" alt="Image of {obj.name}"/>'
         )
 
     image_tag.short_description = ""

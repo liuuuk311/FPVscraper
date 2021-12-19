@@ -163,7 +163,7 @@ class Store(BaseModel):
         self.save()
 
     def best_shipping_method(self) -> "ShippingMethod":
-        return self.shipping_methods.filter(price__isnull=False).order_by("price").first()
+        return self.shipping_methods.order_by("price").first()
 
     @property
     def imported_products(self) -> int:
