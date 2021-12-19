@@ -17,7 +17,10 @@ from .forms import CsvImportForm
 from .tasks import (
     check_scraping_compatibility,
     import_products_from_import_queries,
-    re_import_product, import_all_products_for_all_stores, re_import_all_products, re_import_product_from_store,
+    re_import_product,
+    import_all_products_for_all_stores,
+    re_import_all_products,
+    re_import_product_from_store,
 )
 from .models import (
     Store,
