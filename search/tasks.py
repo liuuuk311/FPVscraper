@@ -145,3 +145,9 @@ def _re_import_product_from_store(store: Store):
     for product in store.products.order_by("import_date"):
         _re_import_product(product)
         sleep(3)
+
+
+@task(name="re_import_product_from_store")
+def re_import_product_from_store(store_pk: int):
+    store = Store.objects.get(pk=store_pk)
+    _re_import_product_from_store(store)

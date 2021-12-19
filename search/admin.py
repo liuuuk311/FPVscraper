@@ -17,7 +17,7 @@ from .forms import CsvImportForm
 from .tasks import (
     check_scraping_compatibility,
     import_products_from_import_queries,
-    re_import_product, import_all_products_for_all_stores, re_import_all_products,
+    re_import_product, import_all_products_for_all_stores, re_import_all_products, re_import_product_from_store,
 )
 from .models import (
     Store,
@@ -168,6 +168,7 @@ class ImportExportMixin(ImportCsv, ExportCsv):
 
 
 class StoreAdmin(ImportExportMixin):
+    change_form_template = "admin/change_store.html"
     search_fields = ["name"]
     list_display = (
         "name",
@@ -256,9 +257,42 @@ class StoreAdmin(ImportExportMixin):
         data["country"] = Country.objects.filter(name=data.get("country")).first()
         Store.objects.update_or_create(website=data.get("website"), defaults=data)
 
+    def get_urls(self):
+        urls = super(StoreAdmin, self).get_urls()
+        return [
+            url(
+               r"^(?P<store_id>.+)/import_all_with_queries/$",
+               self.admin_site.admin_view(self.import_with_queries),
+               name="store_product_import_all_with_queries",
+            ),
+            url(
+               r"^(?P<store_id>.+)/import_all/$",
+               self.admin_site.admin_view(self.import_all),
+               name="store_product_import_all",
+           )
+        ] + urls
+
+    @staticmethod
+    def import_with_queries(request, store_id):
+        import_products_from_import_queries.delay(store_id)
+        messages.success(
+            request,
+            "Importing ALL products for every store. It's gonna take a while",
+        )
+        return redirect("..")
+
+    @staticmethod
+    def import_all(request, store_id):
+        re_import_product_from_store.delay(store_id)
+        messages.success(
+            request,
+            "Re Importing ALL products. It's gonna take a while",
+        )
+        return redirect("..")
+
 
 class ProductAdmin(ImportExportMixin):
-    change_form_template = "admin/add_product.html"
+    change_form_template = "admin/change_product.html"
     change_list_template = "admin/product_changelist.html"
     search_fields = ["name"]
     list_display = (
