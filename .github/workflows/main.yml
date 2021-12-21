@@ -38,7 +38,6 @@ jobs:
         with:
           command: |
             cd ~/FPVscraper
-            git pull
             docker-compose run --rm app python manage.py migrate
           host: ${{ secrets.HOST }}
           user: deployer
@@ -48,8 +47,7 @@ jobs:
         with:
           command: |
             cd ~/FPVscraper
-            git pull
-            docker-compose run --rm app python manage.py search_index --rebuild -f
+            docker-compose run --rm app python3 manage.py search_index --rebuild -f
           host: ${{ secrets.HOST }}
           user: deployer
           key: ${{ secrets.PRIVATE_KEY}}
