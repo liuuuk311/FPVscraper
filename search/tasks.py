@@ -144,7 +144,7 @@ def re_import_all_products():
 def _re_import_product_from_store(store: Store):
     for product in store.products.order_by("import_date"):
         _re_import_product(product)
-        sleep(3)
+        sleep(2)
 
 
 @task(name="re_import_product_from_store")
