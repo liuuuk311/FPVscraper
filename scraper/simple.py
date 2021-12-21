@@ -40,9 +40,9 @@ def get_link(soup: BeautifulSoup, config: Store) -> str:
 
 
 def format_image_link(text: str) -> str:
-    text = text.format(width=500)
+    text = text.format(width=300)
     if text.startswith("//"):
-        text = f"https{text}"
+        text = f"https:{text}"
     return text
 
 
