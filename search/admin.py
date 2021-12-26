@@ -513,7 +513,7 @@ class RequestedStoreAdmin(admin.ModelAdmin):
         already_added_urls = Store.objects.values_list("website")
         return RequestedStore.objects.exclude(
             website__in=already_added_urls
-        ).values("website").annotate(total=Count("website")).order_by("total")[:5]
+        ).values("website").annotate(total=Count("website")).order_by("-total")[:5]
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
