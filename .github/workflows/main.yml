@@ -47,6 +47,7 @@ jobs:
         with:
           command: |
             cd ~/FPVscraper
+            docker rm $(docker ps -aqf "name=fpvscraper_es")
             docker-compose run --rm app python3 manage.py search_index --rebuild -f
           host: ${{ secrets.HOST }}
           user: deployer
