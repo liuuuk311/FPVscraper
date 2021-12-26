@@ -16,11 +16,11 @@ from modeltranslation.admin import TranslationAdmin
 from .forms import CsvImportForm
 from .tasks import (
     check_scraping_compatibility,
-    import_products_from_import_queries,
-    re_import_product,
-    import_all_products_for_all_stores,
-    re_import_all_products,
-    re_import_product_from_store,
+    task_search_and_import_store_products,
+    task_re_import_product,
+    task_search_and_import_products_from_active_stores,
+    task_re_import_product_from_active_stores,
+    task_re_import_product_from_store,
 )
 from .models import (
     Store,
@@ -191,13 +191,22 @@ class StoreAdmin(ImportExportMixin):
                     "name",
                     "website",
                     "country",
-                    "locale",
                     "currency",
+                    "affiliate_query_param",
+                    "affiliate_id",
+                ]
+            },
+        ),
+        (
+            "Scraping Settings",
+            {
+                "fields": [
+                    "locale",
                     "scrape_with_js",
                     "is_scrapable",
                     "not_scrapable_reason",
                 ]
-            },
+            }
         ),
         (
             "Search",
@@ -232,7 +241,7 @@ class StoreAdmin(ImportExportMixin):
             },
         ),
     ]
-    actions = ["check_compatibility", "import_product", "export_as_csv"]
+    actions = ["check_compatibility", "search_and_import_product", "export_as_csv"]
 
     def check_compatibility(self, request, queryset):
         for store in queryset:
@@ -244,13 +253,13 @@ class StoreAdmin(ImportExportMixin):
             messages.SUCCESS,
         )
 
-    def import_product(self, request, queryset):
+    def search_and_import_product(self, request, queryset):
         for store in queryset:
-            import_products_from_import_queries.delay(store.pk)
+            task_search_and_import_store_products.delay(store.pk)
 
         self.message_user(
             request,
-            "A task has been launched to import products from categories.",
+            "A task has been launched to import products from import queries.",
             messages.SUCCESS,
         )
 
@@ -277,7 +286,7 @@ class StoreAdmin(ImportExportMixin):
 
     @staticmethod
     def import_with_queries(request, store_id):
-        import_products_from_import_queries.delay(store_id)
+        task_search_and_import_store_products.delay(store_id)
         messages.success(
             request,
             "Importing ALL products for every store. It's gonna take a while",
@@ -286,7 +295,7 @@ class StoreAdmin(ImportExportMixin):
 
     @staticmethod
     def import_all(request, store_id):
-        re_import_product_from_store.delay(store_id)
+        task_re_import_product_from_store.delay(store_id)
         messages.success(
             request,
             "Re Importing ALL products. It's gonna take a while",
@@ -367,7 +376,7 @@ class ProductAdmin(ImportExportMixin):
 
     def product_import(self, request, product_id):
         product = self.get_object(request, product_id)
-        re_import_product.delay(product_id)
+        task_re_import_product.delay(product_id)
         messages.success(
             request,
             f"Starting to re-import {product.name} from {product.store.name}. Refresh the page to see the new data.",
@@ -376,7 +385,7 @@ class ProductAdmin(ImportExportMixin):
 
     @staticmethod
     def import_from_all_stores(request):
-        import_all_products_for_all_stores.delay()
+        task_search_and_import_products_from_active_stores.delay()
         messages.success(
             request,
             "Importing ALL products for every store. It's gonna take a while",
@@ -385,7 +394,7 @@ class ProductAdmin(ImportExportMixin):
 
     @staticmethod
     def import_all(request):
-        re_import_all_products.delay()
+        task_re_import_product_from_active_stores.delay(Store.objects.filter(is_active=True))
         messages.success(
             request,
             "Re Importing ALL products. It's gonna take a while",
@@ -484,14 +493,32 @@ class ClickedProductAdmin(admin.ModelAdmin):
         "created_at",
     )
     exclude = ("is_active", )
+    list_display = (
+        "product",
+        "store",
+        "search_query"
+    )
 
 
 class RequestedStoreAdmin(admin.ModelAdmin):
+    change_list_template = "admin/requested_store_changelist.html"
     readonly_fields = (
         "website",
         "is_already_present"
     )
     exclude = ("is_active",)
+
+    @staticmethod
+    def priority_table():
+        already_added_urls = Store.objects.values_list("website")
+        return RequestedStore.objects.exclude(
+            website__in=already_added_urls
+        ).values("website").annotate(total=Count("website")).order_by("total")[:5]
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context.update({'priority_table': self.priority_table()})
+        return super().changelist_view(request, extra_context=extra_context)
 
 
 class ShippingZoneAdmin(ManyToManyExport, ImportExportMixin):

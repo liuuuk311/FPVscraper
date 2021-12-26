@@ -16,3 +16,6 @@ __pycache__
 .idea/*
 
 .env
+
+db_*.json
+pg-data

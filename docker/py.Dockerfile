@@ -2,12 +2,12 @@ FROM python:3.9-slim
 
 ENV PYTHONUNBUFFERED 1
 RUN apt-get update
-RUN apt-get install -y locales locales-all python3-psycopg2 curl unzip xvfb libxi6 libgconf-2-4 gnupg2
+RUN apt-get install -y locales locales-all python3-psycopg2 curl unzip xvfb libxi6 libgconf-2-4 gnupg2 wget
 
-RUN curl -sS -o _chrome_key https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add _chrome_key
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
 RUN echo "deb [arch=amd64]  http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
 RUN apt-get -y update
-RUN apt-get -y install google-chrome-stable=96.0.4664.45-1
+RUN apt-get -y install google-chrome-stable=96.0.4664.110-1
 
 RUN wget https://chromedriver.storage.googleapis.com/96.0.4664.45/chromedriver_linux64.zip
 RUN unzip chromedriver_linux64.zip

@@ -38,6 +38,8 @@ class ProductViewSet(BaseDocumentViewSet):
         'name': 'name.raw',
         'description': 'description.raw',
         'is_available': 'is_available.raw',
+        'country': 'store.country.id',
+        'continent': 'store.country.continent.id',
     }
 
     ordering_fields = {
@@ -46,7 +48,6 @@ class ProductViewSet(BaseDocumentViewSet):
         'score': '_score',
         'clicks': 'click_score',
     }
-
 
 class ProductAutocompleteViewSet(DocumentViewSet):
     document = ProductDocument

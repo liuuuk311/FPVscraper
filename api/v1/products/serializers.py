@@ -11,6 +11,7 @@ class ProductSerializer(serializers.ModelSerializer):
     store = serializers.SerializerMethodField()
     display_name = serializers.SerializerMethodField()
     best_shipping_method = serializers.SerializerMethodField()
+    link = serializers.CharField(source="affiliate_link")
 
     class Meta:
         model = Product
@@ -55,6 +56,7 @@ class ProductSerializer(serializers.ModelSerializer):
 class ProductDocumentSerializer(ProductSerializer, DocumentSerializer):
     store = serializers.SerializerMethodField()
     best_shipping_method = serializers.SerializerMethodField()
+    link = serializers.CharField(source="affiliate_link")
 
     class Meta:
         model = Product

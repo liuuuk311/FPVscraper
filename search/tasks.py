@@ -1,15 +1,16 @@
-from datetime import datetime
-from threading import Thread
-from time import sleep
-
 import requests
 from requests.exceptions import ConnectionError
 from celery.task import task
 
 from scraper.simple import search, scrape_product
-from search.helpers import create_or_update_product
+from search.helpers import  (
+    re_import_store_products,
+    re_import_products_from,
+    import_product,
+    search_and_import_from
+)
 from helpers.logger import logger
-from search.models import Store, ImportQuery, Product
+from search.models import Store, Product
 
 
 @task(name='check_scraping_compatibility')
@@ -61,93 +62,66 @@ def check_scraping_compatibility(store_pk: int) -> bool:
     return True
 
 
-@task(name='import_products_from_import_queries')
-def import_products_from_import_queries(store_pk):
-    config = Store.objects.get(pk=store_pk)
-    if not config.is_scrapable:
-        logger.warning('{} is not compatible. Import cancelled'.format(config))
-        return
-
-    start = datetime.now()
-    for query in ImportQuery.objects.filter(is_active=True):
-        logger.info("Importing {} from {}".format(query, config.name))
-        import_products(query, config)
-        sleep(5)
-
-    elapsed = datetime.now() - start
-    logger.info("Imported new products for {} in ".format(config.name, str(elapsed)), send_to_telegram=True)
-    config.last_check = datetime.now()
-    config.save(update_fields=["last_check"])
-
-
-def import_products(query: ImportQuery, config: Store, delay: float = 5):
-    urls = search(query.text, config, limit=None)
-    for url in urls:
-        data = scrape_product(
-            url, config, fields=['name', 'price', 'image', 'is_available', 'variations', 'description']
-        )
-        created = create_or_update_product(config, data, query)
-        if created:
-            sleep(delay)
+@task(name='search_and_import_store_products')
+def task_search_and_import_store_products(store_pk):
+    search_and_import_from(Store.objects.filter(pk=store_pk))
 
 
 @task(name='re_import_product')
-def re_import_product(product_id: str):
+def task_re_import_product(product_id: str):
     product = Product.objects.get(id=product_id)
-    _re_import_product(product)
-
-
-def _re_import_product(product: Product):
-    logger.info(f"Re importing {product.name} from {product.store.name}")
-    data = scrape_product(
-        product.link, product.store, fields=['name', 'price', 'image', 'is_available', 'variations', 'description']
-    )
-    create_or_update_product(product.store, data, product.import_query)
-
-
-@task(name="import_all_products_for_all_stores")
-def import_all_products_for_all_stores():
-    start = datetime.now()
-    for query in ImportQuery.objects.filter(is_active=True):
-        processes = []
-        for store in Store.objects.filter(is_active=True):
-            p = Thread(target=import_products, args=(query, store))
-            p.start()
-            processes.append(p)
-
-        for p in processes:
-            p.join()
-
-    elapsed = datetime.now() - start
-    logger.info("Imported new and old products in ".format(str(elapsed)), send_to_telegram=True)
-
-
-@task(name="re_import_all_products")
-def re_import_all_products():
-    start = datetime.now()
-    threads = []
-    for store in Store.objects.filter(is_active=True):
-        if len(threads) == 5:
-            threads[0].join()
-
-        p = Thread(target=_re_import_product_from_store, args=(store, ))
-        p.start()
-        threads.append(p)
-
-    for t in threads:
-        t.join()
-
-    elapsed = datetime.now() - start
-    logger.info("Re imported ALL products in ".format(str(elapsed)), send_to_telegram=True)
-
-
-def _re_import_product_from_store(store: Store):
-    for product in store.products.order_by("import_date"):
-        _re_import_product(product)
-        sleep(2)
-
+    import_product(product.link, product.store, product.import_query)
 
 @task(name="re_import_product_from_store")
-def re_import_product_from_store(store_pk: int):
-    store = Store.objects.get(pk=store_pk)
-    _re_import_product_from_store(store)
+def task_re_import_product_from_store(store_pk: int):
+    re_import_store_products(Store.objects.get(pk=store_pk))
+
+
+@task(name="search_and_import_products_from_active_stores")
+def task_search_and_import_products_from_active_stores():
+    search_and_import_from(Store.objects.only_active())
+
+
+@task(name="search_and_import_products_from_asian_stores")
+def task_search_and_import_products_from_asian_stores():
+    search_and_import_from(Store.objects.only_asian())
+
+
+@task(name="search_and_import_products_from_european_stores")
+def task_search_and_import_products_from_european_stores():
+    search_and_import_from(Store.objects.only_european())
+
+
+@task(name="search_and_import_products_from_american_stores")
+def task_search_and_import_products_from_american_stores():
+    search_and_import_from(Store.objects.only_american())
+
+
+@task(name="search_and_import_products_from_australia_stores")
+def task_search_and_import_products_from_australia_stores():
+    search_and_import_from(Store.objects.only_australian())
+
+
+@task(name="re_import_product_from_active_stores")
+def task_re_import_product_from_active_stores():
+    re_import_products_from(Store.objects.only_active())
+
+
+@task(name="re_import_products_from_asian_stores")
+def task_re_import_products_from_asian_stores():
+    re_import_products_from(Store.objects.only_asian())
+
+
+@task(name="re_import_products_from_european_stores")
+def task_re_import_products_from_european_stores():
+    re_import_products_from(Store.objects.only_european())
+
+
+@task(name="re_import_products_from_american_stores")
+def task_re_import_products_from_american_stores():
+    re_import_products_from(Store.objects.only_american())
+
+
+@task(name="re_import_products_from_australian_stores")
+def task_re_import_products_from_australian_stores():
+    re_import_products_from(Store.objects.only_australian())

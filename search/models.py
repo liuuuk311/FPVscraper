@@ -1,4 +1,7 @@
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+
 from django.db import models
+from django.db.models import QuerySet
 from django.utils import timezone
 
 
@@ -12,10 +15,38 @@ class BaseModel(models.Model):
         abstract = True
 
 
+class StoreQuerySet(QuerySet):
+    def only_active(self):
+        return self.filter(is_active=True)
+
+    def only_asian(self):
+        asia = Continent.objects.filter(name_en="Asia").first()
+        return self.only_active().filter(country__continent=asia)
+
+    def only_european(self):
+        europe = Continent.objects.filter(name_en="Europe").first()
+        return self.only_active().filter(country__continent=europe)
+
+    def only_american(self):
+        america = Continent.objects.filter(name_en="America").first()
+        return self.only_active().filter(country__continent=america)
+
+    def only_australian(self):
+        oceania = Continent.objects.filter(name_en="Oceania").first()
+        return self.only_active().filter(country__continent=oceania)
+
+
 class Store(BaseModel):
     """This model represent an online store"""
 
-    CURRENCIES = (("EUR", "Euro"), ("USD", "US Dollar"))
+    CURRENCIES = (
+        ("EUR", "Euro"),
+        ("USD", "US Dollar"),
+        ("GBP", "British Pound"),
+        ("CAD", "Canadian Dollar"),
+        ("AUD", "Australian Dollar"),
+
+    )
 
     LOCALE_US = "en_US"
     LOCALE_EU = "it_IT"
@@ -144,6 +175,21 @@ class Store(BaseModel):
         blank=True,
     )
 
+    affiliate_query_param = models.CharField(
+        "The affiliate query parameter",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+    affiliate_id =  models.CharField(
+        "The affiliate id",
+        max_length=256,
+        null=True,
+        blank=True,
+    )
+
+    objects = StoreQuerySet.as_manager()
+
     def __str__(self):
         return "{} ({})".format(
             self.name,
@@ -180,6 +226,10 @@ class Store(BaseModel):
     @property
     def products_with_variations(self) -> int:
         return self.products.filter(is_available__isnull=True).count()
+
+    @property
+    def is_affiliated(self):
+        return self.affiliate_query_param and self.affiliate_id
 
 
 class ShippingMethod(BaseModel):
@@ -313,6 +363,18 @@ class Product(BaseModel):
 
         return self.store.best_shipping_method()
 
+    @property
+    def affiliate_link(self):
+        if not self.store.is_affiliated:
+            return self.link
+
+        url_parts = list(urlparse(self.link))
+        query = dict(parse_qsl(url_parts[4]))
+        query[self.store.affiliate_query_param] = self.store.affiliate_id
+        url_parts[4] = urlencode(query)
+
+        return urlunparse(url_parts)
+
 
 class Continent(BaseModel):
     name = models.CharField("The name of the continent", max_length=128)
@@ -352,8 +414,12 @@ class ClickedProduct(BaseModel):
     def __str__(self):
         return f"Clicked {self.product.name}"
 
+    @property
+    def store(self):
+        return self.product.store
+
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        if not self.pk:
+        if not self.pk and self.product.import_query:
             self.product.import_query.update_priority_score()
         super().save(force_insert, force_update, using, update_fields)
 

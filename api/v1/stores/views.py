@@ -3,11 +3,13 @@ from rest_framework import mixins
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from api.v1.stores.serializers import CountrySerializer, StoreSuggestionSerializer
+from api.v1.stores.serializers import StoreCountrySerializer, StoreSuggestionSerializer
 from search.models import Country, Store, RequestedStore, Product
 
 
 class StoreViewSet(mixins.ListModelMixin, GenericViewSet):
+    """ Return the stores grouped by country """
+
     queryset = (
         Country.objects.filter(
             is_active=True,
@@ -15,7 +17,7 @@ class StoreViewSet(mixins.ListModelMixin, GenericViewSet):
             stores__is_scrapable=True
         ).annotate(store_count=Count("stores")).order_by("-store_count")
     )
-    serializer_class = CountrySerializer
+    serializer_class = StoreCountrySerializer
 
 
 class StoreStatsViewSet(mixins.ListModelMixin, GenericViewSet):

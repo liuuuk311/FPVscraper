@@ -41,7 +41,17 @@ edge_ngram_completion = analyzer(
 class ProductDocument(Document):
     store = fields.ObjectField(properties={
         'id': fields.IntegerField(),
-        'name': fields.TextField(),
+        'name': fields.TextField(
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
+        'country': fields.ObjectField(properties={
+            'id': fields.IntegerField(),
+            'continent': fields.ObjectField(properties={
+                'id':  fields.IntegerField()
+            })
+        })
     })
     name = fields.TextField(
         attr='name',
@@ -74,6 +84,10 @@ class ProductDocument(Document):
         }
     )
 
+    affiliate_link = fields.TextField(
+        attr='affiliate_link',
+    )
+
     best_shipping_method = fields.ObjectField(properties={
         'name_en': fields.TextField(),
         'name_it': fields.TextField(),
@@ -90,7 +104,6 @@ class ProductDocument(Document):
             'price',
             'currency',
             'image',
-            'link',
         ]
 
         related_models = [Store]
