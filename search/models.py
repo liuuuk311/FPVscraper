@@ -342,6 +342,7 @@ class Product(BaseModel):
         default=None
     )
 
+
     def __str__(self):
         return "{} from {}, price: {}".format(
             self.name,

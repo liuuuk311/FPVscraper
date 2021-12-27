@@ -41,11 +41,7 @@ edge_ngram_completion = analyzer(
 class ProductDocument(Document):
     store = fields.ObjectField(properties={
         'id': fields.IntegerField(),
-        'name': fields.TextField(
-            fields={
-                'raw': fields.KeywordField(),
-            }
-        ),
+        'name': fields.TextField(),
         'country': fields.ObjectField(properties={
             'id': fields.IntegerField(),
             'continent': fields.ObjectField(properties={
@@ -105,13 +101,3 @@ class ProductDocument(Document):
             'currency',
             'image',
         ]
-
-        related_models = [Store]
-
-    def get_instances_from_related(self, related_instance):
-        """If related_models is set, define how to retrieve the Product instance(s) from the related model.
-        The related_models option should be used with caution because it can lead in the index
-        to the updating of a lot of items.
-        """
-        if isinstance(related_instance, Store):
-            return related_instance.products.all()

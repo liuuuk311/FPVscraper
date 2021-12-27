@@ -30,8 +30,12 @@ def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bo
     celery_logger.info(f"Product data to create: {data}")
     try:
         product, created = Product.objects.update_or_create(id=product_id, defaults=data)
-    except (DataError, IntegrityError) as e:
+    except IntegrityError as e:
         celery_logger.error(f"Product not created. Error: {e}")
+        product = Product.objects.filter(id=product_id)
+        if product.exists():
+            product.is_active = False
+            product.save(update_fields=["is_active"])
         return False
     except elasticsearch.exceptions.ConnectionError as e:
         celery_logger.error(f"Product not created, Elasticsearch is probably down, waiting for it to restart. Error: {e}")
@@ -68,9 +72,6 @@ def import_product(link: str, store: Store, import_query: ImportQuery):
     if created:
         sleep(random_sleep_time())
 
-    store.last_check = timezone.now()
-    store.save(update_fields=["last_check"])
-
 
 def re_import_store_products(store: Store):
     """ Re import all products of a given store """
@@ -82,6 +83,9 @@ def re_import_store_products(store: Store):
         logger.info(f"Re importing {product.name} from {product.store.name}")
         import_product(product.link, product.store, product.import_query)
 
+    store.last_check = timezone.now()
+    store.save(update_fields=["last_check"])
+
 
 def search_and_import_products(query: ImportQuery, store: Store):
     if not store.is_scrapable:
@@ -91,6 +95,9 @@ def search_and_import_products(query: ImportQuery, store: Store):
     urls = search(query.text, store, limit=None)
     for url in urls:
         import_product(url, store, query)
+
+    store.last_check = timezone.now()
+    store.save(update_fields=["last_check"])
 
 
 def search_and_import_from(store_qs: QuerySet):
