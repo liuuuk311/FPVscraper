@@ -3,6 +3,7 @@ from textwrap import shorten
 from django_elasticsearch_dsl_drf.serializers import DocumentSerializer
 from rest_framework import serializers
 
+from api.helpers import format_accept_language
 from search.documents import ProductDocument
 from search.models import ClickedProduct, Product
 
@@ -43,7 +44,7 @@ class ProductSerializer(serializers.ModelSerializer):
         if not shipping_method:
             return
 
-        lang = self.context["request"].headers.get("Accept-Language", "en").split("-")[0]
+        lang = format_accept_language(self.context["request"].headers.get("Accept-Language", "en"))
         return {
             "name": getattr(shipping_method, f"name_{lang}", "name_en"),
             "price": shipping_method.price,

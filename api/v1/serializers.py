@@ -1,13 +1,13 @@
 from django.conf import settings
 from rest_framework import serializers
 
+from api.helpers import get_language
 
-class TranslateNameSerializerMixin(serializers.BaseSerializer):
-    name = serializers.SerializerMethodField()
+
+class TranslateNameSerializerMixin:
+    context: dict
 
     def get_name(self, obj):
-        lang = self.context["request"].headers.get("Accept-Language", "en")
-        if all(lang != lang_code for lang_code, _ in settings.LANGUAGES):
-            return obj.name_en
+        lang = get_language(self.context["request"])
 
         return getattr(obj, f"name_{lang}")

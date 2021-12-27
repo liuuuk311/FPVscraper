@@ -1,9 +1,10 @@
 from rest_framework import serializers
 
+from api.v1.serializers import TranslateNameSerializerMixin
 from search.models import ShippingMethod
 
 
-class ShippingMethodSerializer(serializers.ModelSerializer):
+class ShippingMethodSerializer(serializers.ModelSerializer, TranslateNameSerializerMixin):
     name = serializers.SerializerMethodField()
     currency = serializers.CharField(source="store.currency")
 
@@ -18,7 +19,3 @@ class ShippingMethodSerializer(serializers.ModelSerializer):
             "is_free",
             "currency",
         ]
-
-    def get_name(self, obj):
-        lang = self.context["request"].headers.get("Accept-Language", "en")
-        return getattr(obj, f"name_{lang}")
