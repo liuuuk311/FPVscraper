@@ -1,0 +1,30 @@
+{% extends 'admin/change_list.html' %}
+
+{% block content %}
+    <div>
+        <h2>Clicked product dashboard</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Store</th>
+                <th># clicks</th>
+                <th># clicks (7 Days)</th>
+                <th># clicks (1 Month)</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for row in dashboard_data %}
+                    <tr>
+                        <td>{{ row.store_name }}</td>
+                        <td>{{ row.total }}</td>
+                        <td>{{ row.last_7_days }}</td>
+                        <td>{{ row.last_1_month }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h2>All Clicked Products</h2>
+    {{ block.super }}
+{% endblock %}

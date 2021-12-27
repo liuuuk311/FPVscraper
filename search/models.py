@@ -403,11 +403,19 @@ class ShippingZone(BaseModel):
         return self.name
 
 
+class ClickedProductQuerySet(QuerySet):
+    def created_after(self, after_date: timezone) -> QuerySet:
+        return self.filter(
+            created_at__gte=after_date
+        )
+
 class ClickedProduct(BaseModel):
     product = models.ForeignKey(Product, null=True, related_name="clicks", on_delete=models.SET_NULL)
     clicked_after_seconds = models.FloatField("Clicked After Seconds")
     search_query = models.CharField("Search query", max_length=512)
     page = models.IntegerField("Result page")
+
+    objects = ClickedProductQuerySet.as_manager()
 
     class Meta:
         verbose_name_plural = "Clicked Products"

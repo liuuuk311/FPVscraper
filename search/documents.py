@@ -5,7 +5,7 @@ from django_elasticsearch_dsl import (
 )
 from elasticsearch_dsl import analyzer, token_filter
 
-from .models import Product, Store
+from .models import Product
 
 
 product_index = Index('products')

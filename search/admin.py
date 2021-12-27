@@ -1,7 +1,7 @@
 import csv
 import itertools
 from abc import abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 
 from django.conf.urls import url
@@ -9,6 +9,7 @@ from django.contrib import admin, messages
 from django.db.models import Count
 from django.http import StreamingHttpResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.utils.html import format_html
 from core.translation import *
 from modeltranslation.admin import TranslationAdmin
@@ -485,6 +486,7 @@ class CountryAdmin(TranslationAdmin, ImportExportMixin):
 
 
 class ClickedProductAdmin(admin.ModelAdmin):
+    change_list_template = "admin/clicked_products_changelist.html"
     readonly_fields = (
         "product",
         "clicked_after_seconds",
@@ -499,6 +501,30 @@ class ClickedProductAdmin(admin.ModelAdmin):
         "search_query"
     )
 
+    @staticmethod
+    def dashboard_data():
+        data = []
+        stores = Store.objects.only_active()
+        for store in stores:
+            qs = ClickedProduct.objects.filter(product__store=store)
+            if qs.count() == 0:
+                continue
+
+            now = timezone.now()
+            data.append(
+                {
+                    "store_name": store.name,
+                    "total": qs.count(),
+                    "last_7_days": qs.created_after(now - timedelta(days=7)).count(),
+                    "last_1_month": qs.created_after(now - timedelta(days=30)).count()
+                }
+            )
+        return data
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context.update({'dashboard_data': self.dashboard_data()})
+        return super().changelist_view(request, extra_context=extra_context)
 
 class RequestedStoreAdmin(admin.ModelAdmin):
     change_list_template = "admin/requested_store_changelist.html"
