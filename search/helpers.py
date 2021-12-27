@@ -32,8 +32,9 @@ def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bo
         product, created = Product.objects.update_or_create(id=product_id, defaults=data)
     except IntegrityError as e:
         celery_logger.error(f"Could not create or update: {data['link']}")
-        product = Product.objects.filter(id=product_id)
-        if product.exists():
+        qs = Product.objects.filter(id=product_id)
+        if qs.exists():
+            product = qs.first()
             product.is_active = False
             product.save(update_fields=["is_active"])
         return False
