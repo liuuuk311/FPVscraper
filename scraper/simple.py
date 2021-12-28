@@ -34,15 +34,17 @@ def get_soup(url: str, js_enabled: bool = False) -> Optional[BeautifulSoup]:
 
 def get_link(soup: BeautifulSoup, config: Store) -> str:
     href = soup.find_next('a')['href']
-    if href.startswith('/'):
+    if not href.startswith('http'):
         href = config.website + href
     return href
 
 
-def format_image_link(text: str) -> str:
+def format_image_link(text: str, store: Store) -> str:
     text = text.format(width=300)
     if text.startswith("//"):
         text = f"https:{text}"
+    if not text.startswith("http"):
+        text = f"{store.website}{text}"
     return text
 
 
@@ -100,7 +102,7 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
                 if soup_obj.name != "img":
                     soup_obj = soup_obj.find("img")
                 img_link = soup_obj['data-src'] if soup_obj.has_attr('data-src') else soup_obj['src']
-                data[field] = format_image_link(img_link)
+                data[field] = format_image_link(img_link, store=config)
 
             elif field == 'price':
                 price = parse_price(unicode_str_text.strip(), store_locale=config.locale)
