@@ -80,48 +80,58 @@ def task_re_import_product_from_store(store_pk: int):
 @task(name="search_and_import_products_from_active_stores")
 def task_search_and_import_products_from_active_stores():
     search_and_import_from(Store.objects.only_active())
+    logger.info("Search and import done for  stores", send_to_telegram=True)
 
 
 @task(name="search_and_import_products_from_asian_stores")
 def task_search_and_import_products_from_asian_stores():
     search_and_import_from(Store.objects.only_asian())
+    logger.info("Search and import done for asian stores", send_to_telegram=True)
 
 
 @task(name="search_and_import_products_from_european_stores")
 def task_search_and_import_products_from_european_stores():
     search_and_import_from(Store.objects.only_european())
+    logger.info("Search and import done for european stores", send_to_telegram=True)
 
 
 @task(name="search_and_import_products_from_american_stores")
 def task_search_and_import_products_from_american_stores():
     search_and_import_from(Store.objects.only_american())
+    logger.info("Search and import done for america stores", send_to_telegram=True)
 
 
 @task(name="search_and_import_products_from_australia_stores")
 def task_search_and_import_products_from_australia_stores():
     search_and_import_from(Store.objects.only_australian())
+    logger.info("Search and import done for australian stores", send_to_telegram=True)
 
 
 @task(name="re_import_product_from_active_stores")
 def task_re_import_product_from_active_stores():
     re_import_products_from(Store.objects.only_active())
+    logger.info("Reimport done for active stores", send_to_telegram=True)
 
 
 @task(name="re_import_products_from_asian_stores")
 def task_re_import_products_from_asian_stores():
     re_import_products_from(Store.objects.only_asian())
+    logger.info("Reimport done for asian stores", send_to_telegram=True)
 
 
 @task(name="re_import_products_from_european_stores")
 def task_re_import_products_from_european_stores():
     re_import_products_from(Store.objects.only_european())
+    logger.info("Reimport done for european stores", send_to_telegram=True)
 
 
 @task(name="re_import_products_from_american_stores")
 def task_re_import_products_from_american_stores():
     re_import_products_from(Store.objects.only_american())
+    logger.info("Reimport done for american stores", send_to_telegram=True)
 
 
 @task(name="re_import_products_from_australian_stores")
 def task_re_import_products_from_australian_stores():
     re_import_products_from(Store.objects.only_australian())
+    logger.info("Reimport done for australian stores", send_to_telegram=True)

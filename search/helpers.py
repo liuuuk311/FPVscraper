@@ -51,7 +51,6 @@ def random_sleep_time() -> float:
 
 
 def re_import_products_from(store_qs: QuerySet):
-    start = datetime.now()
     threads = []
     for store in store_qs:
         p = Thread(target=re_import_store_products, args=(store,))
@@ -60,9 +59,6 @@ def re_import_products_from(store_qs: QuerySet):
 
     for t in threads:
         t.join()
-
-    elapsed = datetime.now() - start
-    logger.info("Re imported ALL products in ".format(str(elapsed)), send_to_telegram=True)
 
 
 def import_product(link: str, store: Store, import_query: ImportQuery):
@@ -102,7 +98,6 @@ def search_and_import_products(query: ImportQuery, store: Store):
 
 
 def search_and_import_from(store_qs: QuerySet):
-    start = datetime.now()
     for query in ImportQuery.objects.filter(is_active=True):
         processes = []
         for store in store_qs:
@@ -112,6 +107,3 @@ def search_and_import_from(store_qs: QuerySet):
 
         for p in processes:
             p.join()
-
-    elapsed = datetime.now() - start
-    logger.info("Imported new and old products in ".format(str(elapsed)), send_to_telegram=True)
