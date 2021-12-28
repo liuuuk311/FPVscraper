@@ -42,17 +42,6 @@ jobs:
           host: ${{ secrets.HOST }}
           user: deployer
           key: ${{ secrets.PRIVATE_KEY}}
-      - name: Rebuild index
-        uses: fifsky/ssh-action@master
-        with:
-          command: |
-            cd ~/FPVscraper
-            curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_cluster/settings -d '{ "transient": { "cluster.routing.allocation.disk.threshold_enabled": false } }'
-            curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_all/_settings -d '{"index.blocks.read_only_allow_delete": null}'
-            docker-compose run --rm app python3 manage.py search_index --rebuild -f
-          host: ${{ secrets.HOST }}
-          user: deployer
-          key: ${{ secrets.PRIVATE_KEY}}
       - name: Deploy
         uses: fifsky/ssh-action@master
         with:
