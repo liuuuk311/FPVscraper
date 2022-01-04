@@ -31,7 +31,7 @@ def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bo
     try:
         product, created = Product.objects.update_or_create(id=product_id, defaults=data)
     except IntegrityError as e:
-        celery_logger.error(f"Could not create or update: {data['link']}")
+        # celery_logger.error(f"Could not create or update: {data['link']}")
         qs = Product.objects.filter(id=product_id)
         if qs.exists():
             product = qs.first()
@@ -39,7 +39,7 @@ def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bo
             product.save(update_fields=["is_active"])
         return False
     except elasticsearch.exceptions.ConnectionError as e:
-        celery_logger.error(f"Product not created, Elasticsearch is probably down, waiting for it to restart. Error: {e}")
+        # celery_logger.error(f"Product not created, Elasticsearch is probably down, waiting for it to restart. Error: {e}")
         sleep(20)
         return False
 
