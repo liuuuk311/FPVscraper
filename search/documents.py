@@ -11,8 +11,8 @@ from .models import Product
 product_index = Index('products')
 
 product_index.settings(
-    number_of_shards=1,
-    number_of_replicas=0
+    number_of_shards=2,
+    number_of_replicas=3
 )
 
 html_strip = analyzer(
