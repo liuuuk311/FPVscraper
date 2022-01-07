@@ -191,6 +191,7 @@ class StoreAdmin(ImportExportMixin):
                 "fields": [
                     "name",
                     "website",
+                    "is_active",
                     "country",
                     "currency",
                     "affiliate_query_param",

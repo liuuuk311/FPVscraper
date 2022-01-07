@@ -15,5 +15,8 @@ class LoggerAdapter:
         if send_to_telegram:
             telegram_log(message)
 
+    def warning(self, message):
+        self._logger.warning(message)
+
 
 logger = LoggerAdapter(celery_logger)

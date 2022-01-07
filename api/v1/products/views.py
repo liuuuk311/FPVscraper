@@ -53,7 +53,8 @@ class ProductAutocompleteViewSet(DocumentViewSet):
     document = ProductDocument
 
     filter_backends = [
-        FunctionalSuggesterFilterBackend
+        FunctionalSuggesterFilterBackend,
+        OrderingFilterBackend,
     ]
 
     functional_suggester_fields = {
@@ -70,6 +71,14 @@ class ProductAutocompleteViewSet(DocumentViewSet):
             },
         }
     }
+
+    ordering_fields = {
+        'name': 'name.raw',
+        'score': '_score',
+        'clicks': 'click_score',
+    }
+
+    ordering = ('name', 'score', 'clicks')
 
 
 class ClickedProductViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):

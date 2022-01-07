@@ -10,6 +10,7 @@ class StoreSerializer(serializers.ModelSerializer):
         fields = [
             "name",
             "website",
+            "is_active",
         ]
 
 

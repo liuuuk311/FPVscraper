@@ -38,6 +38,7 @@ def check_scraping_compatibility(store_pk: int) -> bool:
     queries = ['Motor', 'ESC']
     for query in queries:
         urls = search(query, config)
+        logger.info(urls)
         if not urls:
             config.set_is_not_scrapable(f'The search for {query} did not produced any url')
             return False
