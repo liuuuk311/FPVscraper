@@ -97,49 +97,69 @@ class Store(BaseModel):
     )
 
     product_name_class = models.CharField(
-        "The css class of the product's name", max_length=64
+        "CSS class/id for Product's name", max_length=64
+    )
+    product_name_css_is_class = models.BooleanField(
+        "CSS is a class",
+        default=True,
     )
     product_name_tag = models.CharField(
-        "The html tag of the product's name", max_length=64
+        "HTML tag for the product's name", max_length=64
     )
     product_price_class = models.CharField(
-        "The css class of the product's price", max_length=64
+        "CSS class/id for Product's price", max_length=64
+    )
+    product_price_css_is_class = models.BooleanField(
+        "CSS is a class",
+        default=True,
     )
     product_price_tag = models.CharField(
-        "The html tag of the product's price", max_length=64
+        "HTML tag for the product's price", max_length=64
     )
     product_image_class = models.CharField(
-        "The css class of the main image of the product",
+        "CSS class/id for Product's image",
         max_length=64,
         null=True,
         blank=True,
     )
+    product_image_css_is_class = models.BooleanField(
+        "CSS is a class",
+        default=True,
+    )
     product_image_tag = models.CharField(
-        "The html tag of the main image of the product",
+        "HTML tag for the main image of the product",
         max_length=64,
         null=True,
         blank=True,
     )
     product_thumb_class = models.CharField(
-        "The css class of the thumbnail images of the product",
+        "CSS class/id for Product's thumbnail",
         max_length=64,
         null=True,
         blank=True,
     )
+    product_thumb_css_is_class = models.BooleanField(
+        "CSS is a class",
+        default=True,
+    )
     product_thumb_tag = models.CharField(
-        "The html tag of the thumbnail images of the product",
+        "HTML tag for the thumbnail images of the product",
         max_length=64,
         null=True,
         blank=True,
     )
     product_is_available_class = models.CharField(
-        "The css class to know if the product is available",
+        "CSS class/id to know if the product is available",
         max_length=64,
         null=True,
         blank=True,
     )
+    product_is_available_css_is_class = models.BooleanField(
+        "CSS is a class",
+        default=True,
+    )
     product_is_available_tag = models.CharField(
-        "The html tag to know if the product is available",
+        "HTML tag to know if the product is available",
         max_length=64,
         null=True,
         blank=True,
@@ -151,25 +171,33 @@ class Store(BaseModel):
         blank=True,
     )
     product_variations_class = models.CharField(
-        "The css class to know if the product has variations",
+        "CSS class/id to know if the product has variations",
         max_length=64,
         null=True,
         blank=True,
     )
+    product_variations_css_is_class = models.BooleanField(
+        "CSS is a class",
+        default=True,
+    )
     product_variations_tag = models.CharField(
-        "The html tag to know if the product has variations",
+        "HTML tag to know if the product has variations",
         max_length=64,
         null=True,
         blank=True,
     )
     product_description_class = models.CharField(
-        "The css class to know if the product description",
+        "CSS class/id for Product's description",
         max_length=64,
         null=True,
         blank=True,
     )
+    product_description_css_is_class = models.BooleanField(
+        "CSS is a class",
+        default=True,
+    )
     product_description_tag = models.CharField(
-        "The html tag to know if the product description",
+        "HTML tag to know if the product description",
         max_length=64,
         null=True,
         blank=True,

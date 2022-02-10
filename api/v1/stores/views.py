@@ -13,7 +13,9 @@ class StoreViewSet(mixins.ListModelMixin, GenericViewSet):
     queryset = (
         Country.objects.filter(
             is_active=True,
-        ).annotate(store_count=Count("stores")).order_by("-store_count")
+        ).annotate(
+            store_count=Count("stores")
+        ).filter(store_count__gt=0).order_by("-store_count")
     )
     serializer_class = StoreCountrySerializer
 

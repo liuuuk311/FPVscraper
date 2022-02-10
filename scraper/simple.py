@@ -81,11 +81,12 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
     for field in fields:
         style_class = getattr(config, "product_{}_class".format(field))
         html_tag = getattr(config, "product_{}_tag".format(field))
+        selector = "class" if getattr(config, "product_{}_css_is_class".format(field)) else "id"
 
         if not bool(style_class) or not bool(html_tag):
             continue
 
-        soup_obj = soup.find(html_tag, class_=style_class)
+        soup_obj = soup.find(html_tag, {selector: style_class})
 
         logger.info(f"Scraping {field} with tag {html_tag} and class {style_class}")
 
