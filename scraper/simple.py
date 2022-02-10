@@ -26,6 +26,7 @@ def get_soup(url: str, js_enabled: bool = False) -> Optional[BeautifulSoup]:
     else:
         page = requests.get(url, headers={'User-Agent': get_random_user_agent()})
         if page.status_code != 200:
+            logger.warning(f"Could not get status 200: Status: {page.status_code} Content: {page.content}")
             return None
         html = page.content
 
@@ -33,7 +34,7 @@ def get_soup(url: str, js_enabled: bool = False) -> Optional[BeautifulSoup]:
 
 
 def get_link(soup: BeautifulSoup, config: Store) -> str:
-    href = soup.find_next('a')['href']
+    href = soup['href'] if soup.has_attr("href") else soup.find_next('a')['href']
     if not href.startswith('http'):
         href = config.website + href
     return href
@@ -91,7 +92,7 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
         logger.info(f"Scraping {field} with tag {html_tag} and class {style_class}")
 
         if field == 'is_available' and 'is_available' not in data:
-            logger.info(f"Found {soup_obj.get_text() if soup_obj else 'nothing'}")
+            logger.info(f"Found {soup_obj.get_text() if soup_obj else 'nothing'} in availability tag")
             data[field] = bool(re.search(config.product_is_available_match, soup_obj.get_text())) if soup_obj else False
             continue
 
@@ -140,36 +141,49 @@ def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep
         if not soup:
             return scraped_urls
 
-        next_url = None
-
         soup_list = soup.find_all(name=config.search_tag,
                                   attrs={'class': config.search_class},
                                   limit=limit)
 
         for obj in soup_list:
             title = obj.find(class_=config.search_link)
-            if title:
-                href = get_link(title, config)
 
-                if limit and len(scraped_urls) == limit:
-                    return scraped_urls
+            if not title:
+                continue
 
-                scraped_urls.append(href)
+            href = get_link(title, config)
 
-        if not config.search_next_page:
+            if limit and len(scraped_urls) == limit:
+                return scraped_urls
+
+            scraped_urls.append(href)
+
+        if not (config.search_next_page or config.search_page_param):
             return scraped_urls
-            
-        next_link = soup.find(class_=config.search_next_page)
 
-        if next_link:
-            if next_link.name != "a":
-                next_link = next_link.find("a")
-            
-            next_url = next_link['href']
-            if next_url and not next_url.startswith("http"):
-                next_url = urllib.parse.urljoin(config.website, next_url)
-            sleep(seconds_of_sleep)
+        if config.search_page_param:
+            url_parts = list(urllib.parse.urlparse(next_url))
+            query = dict(urllib.parse.parse_qsl(url_parts[4]))
 
+            if int(query.get(config.search_page_param, 1)) >= 10:
+                return scraped_urls
+
+            query.update({config.search_page_param: str(int(query.get(config.search_page_param, 1)) + 1)})
+            url_parts[4] = urllib.parse.urlencode(query)
+            next_url = urllib.parse.urlunparse(url_parts)
+        elif config.search_next_page:
+            next_link = soup.find(class_=config.search_next_page)
+
+            if next_link:
+                if next_link.name != "a":
+                    next_link = next_link.find("a")
+
+                next_url = next_link['href']
+                if next_url and not next_url.startswith("http"):
+                    next_url = urllib.parse.urljoin(config.website, next_url)
+                sleep(seconds_of_sleep)
+        else:
+            next_url = None
     return scraped_urls
 
 

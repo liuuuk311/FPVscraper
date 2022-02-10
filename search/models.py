@@ -95,7 +95,12 @@ class Store(BaseModel):
         null=True,
         blank=True,
     )
-
+    search_page_param = models.CharField(
+        "The query param used in alternative to the next page link",
+        max_length=64,
+        null=True,
+        blank=True,
+    )
     product_name_class = models.CharField(
         "CSS class/id for Product's name", max_length=64
     )

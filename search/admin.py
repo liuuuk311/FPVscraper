@@ -219,6 +219,7 @@ class StoreAdmin(ImportExportMixin):
                     "search_class",
                     "search_link",
                     "search_next_page",
+                    "search_page_param",
                 ]
             },
         ),
