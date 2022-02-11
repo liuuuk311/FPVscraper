@@ -163,13 +163,13 @@ def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep
 
         if config.search_page_param:
             url_parts = list(urllib.parse.urlparse(next_url))
-            query = dict(urllib.parse.parse_qsl(url_parts[4]))
+            query_params = dict(urllib.parse.parse_qsl(url_parts[4]))
 
-            if int(query.get(config.search_page_param, 1)) >= 10:
+            if int(query_params.get(config.search_page_param, 1)) >= 10:
                 return scraped_urls
 
-            query.update({config.search_page_param: str(int(query.get(config.search_page_param, 1)) + 1)})
-            url_parts[4] = urllib.parse.urlencode(query)
+            query_params.update({config.search_page_param: str(int(query_params.get(config.search_page_param, 1)) + 1)})
+            url_parts[4] = urllib.parse.urlencode(query_params)
             next_url = urllib.parse.urlunparse(url_parts)
         elif config.search_next_page:
             next_link = soup.find(class_=config.search_next_page)
