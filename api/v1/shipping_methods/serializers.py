@@ -18,4 +18,5 @@ class ShippingMethodSerializer(serializers.ModelSerializer, TranslateNameSeriali
             "min_price_shipping_condition",
             "is_free",
             "currency",
+            "is_weight_dependent",
         ]

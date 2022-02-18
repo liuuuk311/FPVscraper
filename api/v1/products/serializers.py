@@ -51,6 +51,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "is_free": shipping_method.is_free,
             "min_shipping_time": shipping_method.min_shipping_time,
             "min_price_shipping_condition": shipping_method.min_price_shipping_condition,
+            "is_weight_dependent": shipping_method.is_weight_dependent,
         }
 
 

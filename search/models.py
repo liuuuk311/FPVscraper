@@ -242,7 +242,7 @@ class Store(BaseModel):
         self.save()
 
     def best_shipping_method(self) -> "ShippingMethod":
-        return self.shipping_methods.order_by("price").first()
+        return self.shipping_methods.order_by("price", "name").first()
 
     @property
     def imported_products(self) -> int:
@@ -300,10 +300,14 @@ class ShippingMethod(BaseModel):
         "Is VAT included?",
         default=True
     )
+    is_weight_dependent = models.BooleanField(
+        "Does the price depend on the shipping weight?",
+        default=False
+    )
 
     @property
     def is_free(self) -> bool:
-        return not bool(self.price)
+        return not bool(self.price) and not self.is_weight_dependent
 
     def __str__(self):
         return self.display_name
@@ -391,7 +395,12 @@ class Product(BaseModel):
     def best_shipping_method(self) -> ShippingMethod:
         free_shipping = self.store.shipping_methods.filter(
             price__isnull=True, min_price_shipping_condition__isnull=False
-        ).first()
+        )
+        if not free_shipping.exists():
+            return self.store.best_shipping_method()
+
+        free_shipping = free_shipping.first()
+
         if self.price >= free_shipping.min_price_shipping_condition:
             return free_shipping
 

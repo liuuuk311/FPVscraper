@@ -409,7 +409,6 @@ class ShippingMethodAdmin(TranslationAdmin, ImportExportMixin):
 
     def create_obj_from_dict(self, data):
         store_name = data.pop("store", "").split(' (')[0]
-        print(f"store name {store_name}")
         store = Store.objects.filter(name=store_name).first()
         if not store:
             return
@@ -439,6 +438,7 @@ class ShippingMethodAdmin(TranslationAdmin, ImportExportMixin):
             min_price_shipping_condition=min_price_shipping_condition,
             is_active=data.get("is_active", False),
             is_vat_included=data.get("is_vat_included", True),
+            is_weight_dependent=data.get("is_weight_dependent", True)
         )
 
     def get_urls(self):

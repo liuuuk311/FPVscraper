@@ -91,6 +91,7 @@ class ProductDocument(Document):
         'price': fields.FloatField(),
         'is_free': fields.BooleanField(),
         'min_price_shipping_condition': fields.FloatField(),
+        'is_weight_dependent': fields.BooleanField(),
     })
 
     class Django:
