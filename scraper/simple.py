@@ -162,6 +162,7 @@ def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep
             return scraped_urls
 
         if config.search_page_param:
+            logger.info(f"Using page param {config.search_page_param} to find next page")
             url_parts = list(urllib.parse.urlparse(next_url))
             query_params = dict(urllib.parse.parse_qsl(url_parts[4]))
 
@@ -172,16 +173,20 @@ def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep
             url_parts[4] = urllib.parse.urlencode(query_params)
             next_url = urllib.parse.urlunparse(url_parts)
         elif config.search_next_page:
+            logger.info(f"Using CSS class {config.search_next_page} to find next page")
             next_link = soup.find(class_=config.search_next_page)
 
-            if next_link:
-                if next_link.name != "a":
-                    next_link = next_link.find("a")
+            if not next_link:
+                return scraped_urls
 
-                next_url = next_link['href']
-                if next_url and not next_url.startswith("http"):
-                    next_url = urllib.parse.urljoin(config.website, next_url)
-                sleep(seconds_of_sleep)
+            if next_link.name != "a":
+                next_link = next_link.find("a")
+
+            next_url = next_link['href']
+            if next_url and not next_url.startswith("http"):
+                next_url = urllib.parse.urljoin(config.website, next_url)
+            sleep(seconds_of_sleep)
+
         else:
             next_url = None
     return scraped_urls
