@@ -7,8 +7,9 @@ from typing import Dict
 import elasticsearch
 from celery.utils.log import get_task_logger
 from django.db.models import QuerySet
-from django.db.utils import DataError, IntegrityError
+from django.db.utils import IntegrityError
 from django.utils import timezone
+from requests import TooManyRedirects
 
 from helpers.logger import logger
 from scraper.simple import scrape_product, search
@@ -76,9 +77,13 @@ def re_import_store_products(store: Store):
         logger.warning('{} is not compatible. Import cancelled'.format(store))
         return
 
-    for product in store.products.order_by("import_date"):
+    for product in store.products.only_active().order_by("import_date"):
         logger.info(f"Re importing {product.name} from {product.store.name}")
-        import_product(product.link, product.store, product.import_query)
+        try:
+            import_product(product.link, product.store, product.import_query)
+        except (ConnectionError, TooManyRedirects):
+            product.is_active = False
+            product.save(update_fields=["is_active"])
 
     store.last_check = timezone.now()
     store.save(update_fields=["last_check"])

@@ -72,7 +72,12 @@ class ProductDocument(Document):
             'raw': fields.BooleanField(),
         }
     )
-
+    is_active = fields.BooleanField(
+        attr='is_active',
+        fields={
+            'raw': fields.BooleanField(),
+        }
+    )
     click_score = fields.IntegerField(
         attr='click_score',
         fields={

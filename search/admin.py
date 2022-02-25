@@ -181,6 +181,7 @@ class StoreAdmin(ImportExportMixin):
         "products_in_stock",
         "products_out_of_stock",
         "products_with_variations",
+        "products_not_active",
         "last_check",
     )
     readonly_fields = ("is_scrapable", "not_scrapable_reason")
@@ -335,7 +336,7 @@ class ProductAdmin(ImportExportMixin):
         ),
         (
             "Advanced",
-            {"fields": ["original_link", "import_date", "import_query", "id"]},
+            {"fields": ["original_link", "import_date", "import_query", "is_active", "id"]},
         ),
     ]
 

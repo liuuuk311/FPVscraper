@@ -1,5 +1,5 @@
 import requests
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, TooManyRedirects
 from celery.task import task
 
 from scraper.simple import search, scrape_product
@@ -71,7 +71,11 @@ def task_search_and_import_store_products(store_pk):
 @task(name='re_import_product')
 def task_re_import_product(product_id: str):
     product = Product.objects.get(id=product_id)
-    import_product(product.link, product.store, product.import_query)
+    try:
+        import_product(product.link, product.store, product.import_query)
+    except TooManyRedirects:
+        product.is_active = False
+        product.save(update_fields=["is_active"])
 
 @task(name="re_import_product_from_store")
 def task_re_import_product_from_store(store_pk: int):

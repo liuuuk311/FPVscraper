@@ -65,6 +65,7 @@ class ProductDocumentSerializer(ProductSerializer, DocumentSerializer):
         document = ProductDocument
         fields = (
             'id',
+            'is_active',
             'name',
             'display_name',
             'price',

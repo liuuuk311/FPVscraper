@@ -250,15 +250,19 @@ class Store(BaseModel):
 
     @property
     def products_in_stock(self) -> int:
-        return self.products.filter(is_available=True).count()
+        return self.products.only_active().filter(is_available=True).count()
 
     @property
     def products_out_of_stock(self) -> int:
-        return self.products.filter(is_available=False).count()
+        return self.products.only_active().filter(is_available=False).count()
 
     @property
     def products_with_variations(self) -> int:
-        return self.products.filter(is_available__isnull=True).count()
+        return self.products.only_active().filter(is_available__isnull=True).count()
+
+    @property
+    def products_not_active(self) -> int:
+        return self.products.filter(is_active=False).count()
 
     @property
     def is_affiliated(self):
@@ -353,6 +357,10 @@ class ImportQuery(BaseModel):
         super().save(force_insert, force_update, using, update_fields)
 
 
+class ProductQuerySet(QuerySet):
+    def only_active(self):
+        return self.filter(is_active=True)
+
 class Product(BaseModel):
     """This model represent the base class for a generic product"""
 
@@ -379,6 +387,7 @@ class Product(BaseModel):
         default=None
     )
 
+    objects = ProductQuerySet.as_manager()
 
     def __str__(self):
         return "{} from {}, price: {}".format(

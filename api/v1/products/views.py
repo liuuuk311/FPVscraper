@@ -1,3 +1,5 @@
+import operator
+from functools import reduce
 
 from django.db.models import Count
 from django_elasticsearch_dsl_drf.constants import (
@@ -9,6 +11,7 @@ from django_elasticsearch_dsl_drf.filter_backends import (
 )
 from django_elasticsearch_dsl_drf.viewsets import BaseDocumentViewSet, DocumentViewSet
 from django_elasticsearch_dsl_drf.pagination import PageNumberPagination
+from elasticsearch_dsl import Q
 from rest_framework import mixins, viewsets
 
 from search.documents import ProductDocument
@@ -48,6 +51,10 @@ class ProductViewSet(BaseDocumentViewSet):
         'score': '_score',
         'clicks': 'click_score',
     }
+
+    def filter_queryset(self, queryset):
+        return super(ProductViewSet, self).filter_queryset(queryset).filter({'terms': {'is_active.raw': ['true']}})
+
 
 class ProductAutocompleteViewSet(DocumentViewSet):
     document = ProductDocument
