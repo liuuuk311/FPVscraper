@@ -2,6 +2,7 @@ import operator
 from functools import reduce
 
 from django.db.models import Count
+from django.http import Http404
 from django_elasticsearch_dsl_drf.constants import (
     FUNCTIONAL_SUGGESTER_COMPLETION_MATCH,
 )
@@ -53,7 +54,18 @@ class ProductViewSet(BaseDocumentViewSet):
     }
 
     def filter_queryset(self, queryset):
-        return super(ProductViewSet, self).filter_queryset(queryset).filter({'terms': {'is_active.raw': ['true']}})
+        try:
+            return super(ProductViewSet, self).filter_queryset(queryset).filter({'terms': {'is_active.raw': ['true']}})
+        except ConnectionError:
+            try:
+                with open('errors', 'r') as f:
+                    counter = int(f.readline()) + 1
+            except FileNotFoundError:
+                counter = 0
+
+            with open('counter.txt', 'w') as f:
+                f.write(str(counter))
+            raise Http404
 
 
 class ProductAutocompleteViewSet(DocumentViewSet):
