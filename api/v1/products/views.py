@@ -63,7 +63,7 @@ class ProductViewSet(BaseDocumentViewSet):
             except FileNotFoundError:
                 counter = 0
 
-            with open('counter.txt', 'w') as f:
+            with open('errors', 'w') as f:
                 f.write(str(counter))
             raise Http404
 
