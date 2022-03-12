@@ -1,103 +1,62 @@
-import operator
-from functools import reduce
+from distutils.util import strtobool
 
+from django.contrib.postgres.search import SearchQuery, TrigramSimilarity
 from django.db.models import Count
-from django.http import Http404
-from django_elasticsearch_dsl_drf.constants import (
-    FUNCTIONAL_SUGGESTER_COMPLETION_MATCH,
-)
-from django_elasticsearch_dsl_drf.filter_backends import (
-    CompoundSearchFilterBackend, DefaultOrderingFilterBackend, OrderingFilterBackend, FilteringFilterBackend,
-    FunctionalSuggesterFilterBackend,
-)
-from django_elasticsearch_dsl_drf.viewsets import BaseDocumentViewSet, DocumentViewSet
-from django_elasticsearch_dsl_drf.pagination import PageNumberPagination
-from elasticsearch_dsl import Q
 from rest_framework import mixins, viewsets
 
-from search.documents import ProductDocument
-from api.v1.products.serializers import ProductDocumentSerializer, ClickedProductSerializer, ProductSerializer
+from api.v1.products.serializers import ProductDocumentSerializer, ClickedProductSerializer, ProductSerializer, \
+    ProductAutocompleteSerializer
 from search.models import ClickedProduct, Product
 
 
-class ProductViewSet(BaseDocumentViewSet):
-    document = ProductDocument
+class ProductViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = ProductDocumentSerializer
-    pagination_class = PageNumberPagination
-    lookup_field = 'id'
 
-    filter_backends = [
-        FilteringFilterBackend,
-        OrderingFilterBackend,
-        DefaultOrderingFilterBackend,
-        CompoundSearchFilterBackend,
-    ]
+    def get_queryset(self):
+        query = self.request.query_params.get("search")
+        availability_filter = self.request.query_params.get("is_available")
+        continent_filter = self.request.query_params.get("continent")
+        country_filter = self.request.query_params.get("country")
 
-    search_fields = {
-        'name': {'boost': 4},
-        'description': None,
-    }
+        qs = Product.objects.filter(
+            is_active=True
+        )
 
-    filter_fields = {
-        'name': 'name.raw',
-        'description': 'description.raw',
-        'is_available': 'is_available.raw',
-        'country': 'store.country.id',
-        'continent': 'store.country.continent.id',
-    }
+        if availability_filter is not None:
+            qs = qs.filter(is_available=bool(strtobool(availability_filter)))
 
-    ordering_fields = {
-        'price': 'price',
-        'name': 'name.raw',
-        'score': '_score',
-        'clicks': 'click_score',
-    }
+        if continent_filter is not None:
+            qs = qs.filter(store__country__continent_id=int(continent_filter))
 
-    def filter_queryset(self, queryset):
-        try:
-            return super(ProductViewSet, self).filter_queryset(queryset).filter({'terms': {'is_active.raw': ['true']}})
-        except ConnectionError:
-            try:
-                with open('errors', 'r') as f:
-                    counter = int(f.readline()) + 1
-            except FileNotFoundError:
-                counter = 0
+        if country_filter is not None:
+            qs = qs.filter(store__country_id=int(country_filter))
 
-            with open('errors', 'w') as f:
-                f.write(str(counter))
-            raise Http404
+        results = qs.filter(
+            search_vector=SearchQuery(query)
+        )
+        if results.count() > 0:
+            return results.annotate(
+                clicks_count=Count("clicks")
+            ).order_by('clicks')
+
+        return qs.annotate(
+            similarity=TrigramSimilarity('name', query),
+        ).filter(similarity__gt=0.15).order_by('-similarity')
 
 
-class ProductAutocompleteViewSet(DocumentViewSet):
-    document = ProductDocument
+class ProductAutocompleteViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    serializer_class = ProductAutocompleteSerializer
 
-    filter_backends = [
-        FunctionalSuggesterFilterBackend,
-        OrderingFilterBackend,
-    ]
+    def get_queryset(self):
+        query = self.request.query_params.get("q")
 
-    functional_suggester_fields = {
-        'name_suggest_match': {
-            'field': 'name.edge_ngram_completion',
-            'suggesters': [
-                FUNCTIONAL_SUGGESTER_COMPLETION_MATCH
-            ],
-            'default_suggester': FUNCTIONAL_SUGGESTER_COMPLETION_MATCH,
-            'options': {
-                'from': 0,
-                'size': 8,
-                'skip_duplicates': True,
-            },
-        }
-    }
+        qs = Product.objects.filter(
+            is_active=True
+        )
 
-    ordering_fields = {
-        'name': 'name.raw',
-        'score': '_score',
-        'clicks': 'click_score',
-    }
-
-    ordering = ('name', 'score', 'clicks')
+        return qs.annotate(
+            similarity=TrigramSimilarity('name', query),
+        ).filter(similarity__gt=0.15).order_by('-similarity')[:12]
 
 
 class ClickedProductViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):

@@ -1,10 +1,8 @@
 from textwrap import shorten
 
-from django_elasticsearch_dsl_drf.serializers import DocumentSerializer
 from rest_framework import serializers
 
 from api.helpers import format_accept_language
-from search.documents import ProductDocument
 from search.models import ClickedProduct, Product
 
 
@@ -55,14 +53,13 @@ class ProductSerializer(serializers.ModelSerializer):
         }
 
 
-class ProductDocumentSerializer(ProductSerializer, DocumentSerializer):
+class ProductDocumentSerializer(ProductSerializer):
     store = serializers.SerializerMethodField()
     best_shipping_method = serializers.SerializerMethodField()
     link = serializers.CharField(source="affiliate_link")
 
     class Meta:
         model = Product
-        document = ProductDocument
         fields = (
             'id',
             'is_active',
@@ -77,6 +74,12 @@ class ProductDocumentSerializer(ProductSerializer, DocumentSerializer):
             'best_shipping_method',
         )
 
+class ProductAutocompleteSerializer(ProductSerializer):
+    class Meta:
+        model = Product
+        fields = (
+            'name',
+        )
 
 class ClickedProductSerializer(serializers.ModelSerializer):
     class Meta:

@@ -39,8 +39,8 @@ REST_FRAMEWORK = {
 INSTALLED_APPS = [
     'modeltranslation',
     'rest_framework',
-    'django_elasticsearch_dsl',
-    'django_elasticsearch_dsl_drf',
+    # 'django_elasticsearch_dsl',
+    # 'django_elasticsearch_dsl_drf',
     'admin_honeypot',
     'django_celery_beat',
 
@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    'django.contrib.postgres',
 
 ]
 

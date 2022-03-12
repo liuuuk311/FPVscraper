@@ -1,5 +1,7 @@
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 from django.db.models import QuerySet
 from django.utils import timezone
@@ -387,7 +389,12 @@ class Product(BaseModel):
         default=None
     )
 
+    search_vector = SearchVectorField(null=True)
+
     objects = ProductQuerySet.as_manager()
+
+    class Meta:
+        indexes = [GinIndex(fields=["search_vector"])]
 
     def __str__(self):
         return "{} from {}, price: {}".format(

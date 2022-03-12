@@ -1,10 +1,8 @@
 import random
-from datetime import datetime
 from threading import Thread
 from time import sleep
 from typing import Dict
 
-import elasticsearch
 from celery.utils.log import get_task_logger
 from django.db.models import QuerySet
 from django.db.utils import IntegrityError
@@ -38,10 +36,6 @@ def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bo
             product = qs.first()
             product.is_active = False
             product.save(update_fields=["is_active"])
-        return False
-    except elasticsearch.exceptions.ConnectionError as e:
-        # celery_logger.error(f"Product not created, Elasticsearch is probably down, waiting for it to restart. Error: {e}")
-        sleep(20)
         return False
 
     return bool(created)
