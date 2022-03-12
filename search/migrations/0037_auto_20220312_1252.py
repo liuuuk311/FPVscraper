@@ -15,16 +15,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            # sql="""
-            #     CREATE TRIGGER search_vector_trigger
-            #     BEFORE INSERT OR UPDATE OF name, description, search_vector
-            #     ON search_product
-            #     FOR EACH ROW EXECUTE PROCEDURE
-            #     tsvector_update_trigger(
-            #         search_vector, 'pg_catalog.english', name, description
-            #     );
-            #     UPDATE search_product SET search_vector = NULL;
-            #     """,
             sql="""
                 CREATE FUNCTION products_trigger() RETURNS trigger AS $$
                 begin
