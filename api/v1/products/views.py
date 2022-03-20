@@ -63,7 +63,7 @@ class ClickedProductViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     serializer_class = ClickedProductSerializer
 
     def perform_create(self, serializer):
-        product_qs = Product.objects.filter(id=self.kwargs.get("product_id"))
+        product_qs = Product.objects.filter(id=self.kwargs.get("product_pk"))
         if not product_qs.exists():
             return
 
