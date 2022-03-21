@@ -8,7 +8,7 @@ from search.models import ShippingMethod
 class ShippingMethodSerializer(serializers.ModelSerializer, TranslateNameSerializerMixin):
     name = serializers.SerializerMethodField()
     currency = serializers.CharField(source="store.currency")
-    countries = CountrySerializer(source="shipping_zone.ship_to", many=True)
+    countries = CountrySerializer(source="shipping_zone.ship_to", many=True, required=False)
 
     class Meta:
         model = ShippingMethod
