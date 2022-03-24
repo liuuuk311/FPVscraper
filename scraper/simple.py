@@ -2,6 +2,7 @@ import locale
 import re
 
 import random
+import string
 import unicodedata
 from time import sleep
 from typing import Optional, List, Dict
@@ -50,13 +51,16 @@ def format_image_link(text: str, store: Store) -> str:
 
 
 def parse_price(price_string: str, store_locale: str = "it_IT") -> Optional[float]:
-    regex = r"(([A-Z]{3} )?(\$)?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})))"
+    regex = r"(([A-Z]{3} )?(\$|€|£)?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})))"
     pattern = re.compile(regex)
-    match = pattern.match(price_string.strip("€").strip("$").strip("£"))
+    match = pattern.match(price_string)
     if match:
         locale.setlocale(locale.LC_NUMERIC, store_locale)
         return locale.atof(match.group(4))
-    return None
+    else:
+        allowed_characters = string.digits + ".,$€£"
+        clean_price = "".join(c for c in price_string if c in allowed_characters)
+        return parse_price(clean_price, store_locale)
 
 
 def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) -> Dict:

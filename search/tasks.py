@@ -2,7 +2,7 @@ import requests
 from requests.exceptions import ConnectionError, TooManyRedirects
 from celery.task import task
 
-from scraper.simple import search, scrape_product
+from scraper.simple import search, scrape_product, get_random_user_agent
 from search.helpers import  (
     re_import_store_products,
     re_import_products_from,
@@ -19,7 +19,7 @@ def check_scraping_compatibility(store_pk: int) -> bool:
     logger.info(f"Starting to check compatibility for {config.name}")
     # Is the store still available?
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+        headers = {'User-Agent': get_random_user_agent()}
         res = requests.get(config.website, headers=headers)
         if res.status_code == 503:
             config.scrape_with_js = True
