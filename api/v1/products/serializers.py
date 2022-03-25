@@ -3,12 +3,11 @@ from textwrap import shorten
 from rest_framework import serializers
 
 from api.helpers import format_accept_language
-from search.models import ClickedProduct, Product
+from search.models import ClickedProduct, Product, Brand
 
 
 class ProductSerializer(serializers.ModelSerializer):
     store = serializers.SerializerMethodField()
-    display_name = serializers.SerializerMethodField()
     best_shipping_method = serializers.SerializerMethodField()
     link = serializers.CharField(source="affiliate_link")
 
@@ -17,7 +16,6 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'name',
-            'display_name',
             'price',
             'currency',
             'image',
@@ -28,10 +26,7 @@ class ProductSerializer(serializers.ModelSerializer):
         )
 
     @staticmethod
-    def get_display_name(obj):
-        return shorten(obj.name, width=23, placeholder="...")
-
-    def get_store(self, obj):
+    def get_store(obj):
         return {
             'id': obj.store.id,
             'name': obj.store.name,
@@ -53,27 +48,6 @@ class ProductSerializer(serializers.ModelSerializer):
         }
 
 
-class ProductDocumentSerializer(ProductSerializer):
-    store = serializers.SerializerMethodField()
-    best_shipping_method = serializers.SerializerMethodField()
-    link = serializers.CharField(source="affiliate_link")
-
-    class Meta:
-        model = Product
-        fields = (
-            'id',
-            'is_active',
-            'name',
-            'display_name',
-            'price',
-            'currency',
-            'image',
-            'link',
-            'is_available',
-            'store',
-            'best_shipping_method',
-        )
-
 class ProductAutocompleteSerializer(ProductSerializer):
     class Meta:
         model = Product
@@ -89,3 +63,20 @@ class ClickedProductSerializer(serializers.ModelSerializer):
             "search_query",
             "page",
         ]
+
+class BrandProductsSerializer(serializers.ModelSerializer):
+    description = serializers.SerializerMethodField()
+    products = ProductSerializer(many=True)
+
+    class Meta:
+        model = Brand
+        fields = [
+            "name",
+            "description",
+            "logo",
+            "products",
+        ]
+
+    def get_description(self, obj):
+        lang = format_accept_language(self.context["request"].headers.get("Accept-Language", "en"))
+        return getattr(obj, f"description_{lang}", "description_en")

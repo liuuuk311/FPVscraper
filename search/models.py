@@ -5,16 +5,9 @@ from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 from django.db.models import QuerySet
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 
-
-class BaseModel(models.Model):
-    """The base model that every other model should extends"""
-
-    created_at = models.DateTimeField(auto_now=True, auto_created=True)
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        abstract = True
+from helpers.models import BaseModel
 
 
 class StoreQuerySet(QuerySet):
@@ -56,6 +49,7 @@ class Store(BaseModel):
 
     name = models.CharField("Name of the store", max_length=256)
     website = models.URLField("URL of the store")
+    logo = models.ImageField("Logo", default=None, null=True, blank=True, upload_to ='uploads/')
     country = models.ForeignKey("Country", related_name="stores", null=True, default=None, on_delete=models.SET_NULL)
     locale = models.CharField(
         "Locale used in the store",
@@ -231,6 +225,11 @@ class Store(BaseModel):
             self.website,
         )
 
+    def logo_tag(self):
+        return mark_safe(f'<img src="{self.logo.url}" width="33%" />')
+
+    logo_tag.short_description = 'Logo'
+
     def set_is_not_scrapable(self, reason: str):
         self.not_scrapable_reason = reason
         self.last_check = timezone.now()
@@ -267,8 +266,9 @@ class Store(BaseModel):
         return self.products.filter(is_active=False).count()
 
     @property
-    def is_affiliated(self):
-        return self.affiliate_query_param and self.affiliate_id
+    def is_affiliated(self) -> bool:
+        return bool(self.affiliate_query_param and self.affiliate_id)
+
 
 
 class ShippingMethod(BaseModel):
@@ -323,6 +323,16 @@ class ShippingMethod(BaseModel):
         return f"{self.store.name} - {self.name}"
 
 
+class Brand(BaseModel):
+    name = models.CharField("Name of the brand", max_length=64)
+    description = models.TextField("Description")
+    logo = models.ImageField("Brand Logo")
+    is_hot = models.BooleanField("Is an hot brand?", default=False)
+
+    def __str__(self):
+        return self.name
+
+
 class ImportQuery(BaseModel):
     """This model is used to import a product"""
     PRIORITY_LOW = 0
@@ -338,6 +348,7 @@ class ImportQuery(BaseModel):
     priority = models.IntegerField("Import Priority", choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM)
     products_clicks = models.IntegerField("Clicks of the imported products", default=0)
     priority_score = models.FloatField("Priority Score", default=PRIORITY_MEDIUM)
+    brand = models.ForeignKey(Brand, related_name="import_queries", on_delete=models.DO_NOTHING, null=True, blank=True)
 
     class Meta:
         verbose_name = "Import Query"
@@ -388,6 +399,7 @@ class Product(BaseModel):
         null=True,
         default=None
     )
+    brand = models.ForeignKey(Brand, related_name="products", on_delete=models.DO_NOTHING, null=True, blank=True)
 
     search_vector = SearchVectorField(null=True)
 

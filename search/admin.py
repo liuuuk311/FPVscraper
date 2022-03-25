@@ -177,6 +177,7 @@ class StoreAdmin(ImportExportMixin):
     list_display = (
         "name",
         "is_scrapable",
+        "has_shipping_methods",
         "imported_products",
         "products_in_stock",
         "products_out_of_stock",
@@ -184,17 +185,19 @@ class StoreAdmin(ImportExportMixin):
         "products_not_active",
         "last_check",
     )
-    readonly_fields = ("is_scrapable", "not_scrapable_reason")
+    readonly_fields = ("is_scrapable", "not_scrapable_reason", "logo_tag", "has_shipping_methods",)
     fieldsets = [
         (
             None,
             {
                 "fields": [
+                    "logo_tag",
                     "name",
                     "website",
                     "is_active",
                     "country",
                     "currency",
+                    "logo",
                     "affiliate_query_param",
                     "affiliate_id",
                 ]
@@ -299,6 +302,11 @@ class StoreAdmin(ImportExportMixin):
         )
         return redirect("..")
 
+    def has_shipping_methods(self, obj) -> bool:
+        return obj.shipping_methods.exists()
+
+    has_shipping_methods.boolean = True
+
 
 class ProductAdmin(ImportExportMixin):
     change_form_template = "admin/change_product.html"
@@ -310,6 +318,7 @@ class ProductAdmin(ImportExportMixin):
         "price",
         "import_date",
         "store",
+        "brand",
     )
     readonly_fields = (
         "import_date",
@@ -331,6 +340,7 @@ class ProductAdmin(ImportExportMixin):
                     "price",
                     "currency",
                     "store",
+                    "brand"
                 ]
             },
         ),
@@ -507,12 +517,17 @@ class ClickedProductAdmin(admin.ModelAdmin):
                 continue
 
             now = timezone.now()
+            last_week_clicks = qs.created_after(now - timedelta(days=7)).count()
+            last_month_clicks = qs.created_after(now - timedelta(days=30)).count()
+            if last_month_clicks == 0:
+                continue
+
             data.append(
                 {
                     "store_name": store.name,
                     "total": qs.count(),
-                    "last_7_days": qs.created_after(now - timedelta(days=7)).count(),
-                    "last_1_month": qs.created_after(now - timedelta(days=30)).count()
+                    "last_7_days": last_week_clicks,
+                    "last_1_month": last_month_clicks
                 }
             )
         return data
@@ -529,6 +544,7 @@ class RequestedStoreAdmin(admin.ModelAdmin):
         "is_already_present"
     )
     exclude = ("is_active",)
+    list_display = ("website", "created_at",)
 
     @staticmethod
     def priority_table():
@@ -563,6 +579,15 @@ class ShippingZoneAdmin(ManyToManyExport, ImportExportMixin):
             getattr(sz, self.many_to_many_field).add(country.first())
 
 
+class BrandAdmin(ImportExportMixin):
+    readonly_fields = ("created_at",)
+
+    def create_obj_from_dict(self, data):
+        data.pop("id", None)
+        data.pop("created_at", None)
+        Brand.objects.create(**data)
+
+
 class ImportQueryAdmin(ImportExportMixin):
     readonly_fields = ("priority_score", "created_at",)
     exclude = ("products_clicks", )
@@ -577,6 +602,7 @@ admin.site.register(Store, StoreAdmin)
 admin.site.register(ShippingMethod, ShippingMethodAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(ImportQuery, ImportQueryAdmin)
+admin.site.register(Brand, BrandAdmin)
 admin.site.register(Continent, ContinentAdmin)
 admin.site.register(Country, CountryAdmin)
 admin.site.register(ClickedProduct, ClickedProductAdmin)

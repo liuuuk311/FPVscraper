@@ -1,16 +1,16 @@
 from distutils.util import strtobool
 
 from django.contrib.postgres.search import SearchQuery, TrigramSimilarity
-from django.db.models import Count
+from django.db.models import Count, Subquery, OuterRef, Prefetch
 from rest_framework import mixins, viewsets
 
-from api.v1.products.serializers import ProductDocumentSerializer, ClickedProductSerializer, ProductSerializer, \
-    ProductAutocompleteSerializer
-from search.models import ClickedProduct, Product
+from api.v1.products.serializers import ClickedProductSerializer, ProductSerializer, \
+    ProductAutocompleteSerializer, BrandProductsSerializer
+from search.models import ClickedProduct, Product, Brand
 
 
 class ProductViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    serializer_class = ProductDocumentSerializer
+    serializer_class = ProductSerializer
 
     def get_queryset(self):
         query = self.request.query_params.get("search")
@@ -81,4 +81,27 @@ class BestProductViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             clicks__isnull=False
         ).annotate(
             click_count=Count("clicks")
-        ).order_by("-click_count").distinct()[:10]
+        ).order_by("-click_count").distinct()[:6]
+
+
+class BestBrandsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    serializer_class = BrandProductsSerializer
+    MAX_PRODUCTS = 6
+
+    def get_queryset(self):
+        subquery = Subquery(
+            Product.objects.filter(
+                clicks__isnull=False
+            ).annotate(
+                click_count=Count("clicks")
+            ).filter(
+                brand_id=OuterRef('brand_id')
+            ).order_by("-click_count").values_list('id', flat=True)[:self.MAX_PRODUCTS]
+        )
+
+        return Brand.objects.filter(
+            is_active=True, is_hot=True
+        ).prefetch_related(
+            Prefetch('products', queryset=Product.objects.filter(id__in=subquery))
+        )
+

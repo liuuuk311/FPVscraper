@@ -25,6 +25,7 @@ def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bo
     data["store"] = store
     data['import_date'] = timezone.now()
     data['import_query'] = query
+    data['brand'] = query.brand
     data.pop("variations", None)
     celery_logger.info(f"Product data to create: {data}")
     try:
