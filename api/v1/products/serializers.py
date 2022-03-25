@@ -39,7 +39,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
         lang = format_accept_language(self.context["request"].headers.get("Accept-Language", "en"))
         return {
-            "name": getattr(shipping_method, f"name_{lang}", "name_en"),
+            "name": getattr(shipping_method, f"name_{lang}", shipping_method.name_en),
             "price": shipping_method.price,
             "is_free": shipping_method.is_free,
             "min_shipping_time": shipping_method.min_shipping_time,
