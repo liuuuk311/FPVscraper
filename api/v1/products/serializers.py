@@ -1,5 +1,3 @@
-from textwrap import shorten
-
 from rest_framework import serializers
 
 from api.helpers import format_accept_language

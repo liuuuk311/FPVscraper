@@ -19,7 +19,7 @@ class ProductViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         country_filter = self.request.query_params.get("country")
 
         qs = Product.objects.filter(
-            is_active=True
+            is_active=True, store__is_active=True,
         )
 
         if availability_filter is not None:
@@ -37,7 +37,8 @@ class ProductViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         if results.count() > 0:
             return results.annotate(
                 clicks_count=Count("clicks")
-            ).order_by('clicks')
+            ).order_by('-clicks_count')
+
 
         return qs.annotate(
             similarity=TrigramSimilarity('name', query),
