@@ -20,7 +20,7 @@ def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bo
     if not data:
         return False
 
-    product_id = "{}_{}".format(store.name, data.get('name')).replace(' ', '_')
+    product_id = f"{store.name}_{data.get('name')}".replace(' ', '_')
     celery_logger.info(f"ID: {product_id}")
     data["store"] = store
     data['import_date'] = timezone.now()
@@ -69,7 +69,7 @@ def import_product(link: str, store: Store, import_query: ImportQuery):
 def re_import_store_products(store: Store):
     """ Re import all products of a given store """
     if not store.is_scrapable:
-        logger.warning('{} is not compatible. Import cancelled'.format(store))
+        logger.warning(f'{store} is not compatible. Import cancelled')
         return
 
     for product in store.products.only_active().order_by("import_date"):
@@ -86,7 +86,7 @@ def re_import_store_products(store: Store):
 
 def search_and_import_products(query: ImportQuery, store: Store):
     if not store.is_scrapable:
-        logger.warning('{} is not compatible. Import cancelled'.format(store))
+        logger.warning(f'{store} is not compatible. Import cancelled')
         return
 
     urls = search(query.text, store, limit=None)
