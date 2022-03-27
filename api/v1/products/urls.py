@@ -8,7 +8,7 @@ router = routers.SimpleRouter()
 router.register(r"products/best", BestProductViewSet, basename="api_v1_best_products")
 router.register(r"products/autocomplete", ProductAutocompleteViewSet, basename="api_v1_autocomplete_products")
 router.register(r"products", ProductViewSet, basename="api_v1_products")
-router.register(r"brands", BestBrandsViewSet, basename="api_v1_brands")
+router.register(r"brands/best", BestBrandsViewSet, basename="api_v1_brands")
 
 product_router = nested_routers.NestedSimpleRouter(router, r"products", lookup="product")
 product_router.register(r"click", ClickedProductViewSet, basename="api_v1_product_clicked")

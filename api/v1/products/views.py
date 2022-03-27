@@ -52,12 +52,14 @@ class ProductAutocompleteViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
         query = self.request.query_params.get("q")
 
         qs = Product.objects.filter(
-            is_active=True
+            is_active=True, store__is_active=True
         )
 
         return qs.annotate(
             similarity=TrigramSimilarity('name', query),
-        ).filter(similarity__gt=0.15).order_by('-similarity')[:12]
+        ).annotate(
+            clicks_count=Count("clicks")
+        ).filter(similarity__gt=0.15).order_by('-clicks_count', '-similarity')[:12]
 
 
 class ClickedProductViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -79,7 +81,7 @@ class BestProductViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     def get_queryset(self):
         return Product.objects.filter(
-            clicks__isnull=False
+            clicks__isnull=False, is_active=True, store__is_active=True
         ).annotate(
             click_count=Count("clicks")
         ).order_by("-click_count").distinct()[:6]
@@ -91,9 +93,7 @@ class BestBrandsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     def get_queryset(self):
         subquery = Subquery(
-            Product.objects.filter(
-                clicks__isnull=False
-            ).annotate(
+            Product.objects.annotate(
                 click_count=Count("clicks")
             ).filter(
                 brand_id=OuterRef('brand_id')
@@ -105,4 +105,5 @@ class BestBrandsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         ).prefetch_related(
             Prefetch('products', queryset=Product.objects.filter(id__in=subquery))
         )
+
 
