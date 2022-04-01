@@ -504,7 +504,8 @@ class ClickedProductAdmin(admin.ModelAdmin):
     list_display = (
         "product",
         "store",
-        "search_query"
+        "search_query",
+        "created_at",
     )
 
     @staticmethod

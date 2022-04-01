@@ -3,3 +3,6 @@
 public
 venv
 backup_data
+*.png
+*.jpeg
+*.jpg

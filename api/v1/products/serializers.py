@@ -77,4 +77,4 @@ class BrandProductsSerializer(serializers.ModelSerializer):
 
     def get_description(self, obj):
         lang = format_accept_language(self.context["request"].headers.get("Accept-Language", "en"))
-        return getattr(obj, f"description_{lang}", "description_en")
+        return getattr(obj, f"description_{lang}", obj.description_en)

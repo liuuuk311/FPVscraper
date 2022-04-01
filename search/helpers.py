@@ -25,13 +25,12 @@ def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bo
     data["store"] = store
     data['import_date'] = timezone.now()
     data['import_query'] = query
-    data['brand'] = query.brand
+    data['brand'] = query.brand if query.brand.name in data.get("name", "") else None
     data.pop("variations", None)
     celery_logger.info(f"Product data to create: {data}")
     try:
         product, created = Product.objects.update_or_create(id=product_id, defaults=data)
     except IntegrityError as e:
-        # celery_logger.error(f"Could not create or update: {data['link']}")
         qs = Product.objects.filter(id=product_id)
         if qs.exists():
             product = qs.first()
