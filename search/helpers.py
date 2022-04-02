@@ -20,12 +20,13 @@ def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bo
     if not data:
         return False
 
+
     product_id = f"{store.name}_{data.get('name')}".replace(' ', '_')
     celery_logger.info(f"ID: {product_id}")
     data["store"] = store
     data['import_date'] = timezone.now()
     data['import_query'] = query
-    data['brand'] = query.brand if query.brand.name in data.get("name", "") else None
+    data['brand'] = query.brand if query.brand and query.brand.name in data.get("name", "") else None
     data.pop("variations", None)
     celery_logger.info(f"Product data to create: {data}")
     try:
