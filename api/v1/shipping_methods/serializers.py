@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from api.v1.geo.serializers import CountrySerializer
 from api.v1.serializers import TranslateNameSerializerMixin
-from search.models import ShippingMethod
+from search.models import ShippingMethod, SuggestedShippingMethod
 
 
 class ShippingMethodSerializer(serializers.ModelSerializer, TranslateNameSerializerMixin):
@@ -22,4 +22,14 @@ class ShippingMethodSerializer(serializers.ModelSerializer, TranslateNameSeriali
             "currency",
             "is_weight_dependent",
             "countries",
+        ]
+
+class SuggestedShippingMethodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SuggestedShippingMethod
+        fields = [
+            "name",
+            "price",
+            "is_weight_dependent",
+            "min_price_shipping_condition",
         ]

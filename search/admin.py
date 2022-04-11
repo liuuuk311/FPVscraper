@@ -32,7 +32,7 @@ from .models import (
     Country,
     ClickedProduct,
     RequestedStore,
-    ShippingZone
+    ShippingZone, SuggestedShippingMethod
 )
 
 
@@ -609,3 +609,4 @@ admin.site.register(Country, CountryAdmin)
 admin.site.register(ClickedProduct, ClickedProductAdmin)
 admin.site.register(RequestedStore, RequestedStoreAdmin)
 admin.site.register(ShippingZone, ShippingZoneAdmin)
+admin.site.register(SuggestedShippingMethod)

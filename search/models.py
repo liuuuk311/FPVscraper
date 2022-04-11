@@ -323,6 +323,29 @@ class ShippingMethod(BaseModel):
         return f"{self.store.name} - {self.name}"
 
 
+class SuggestedShippingMethod(BaseModel):
+    store = models.ForeignKey(
+        Store, related_name="suggested_shipping_methods", on_delete=models.CASCADE
+    )
+    name = models.CharField("Name", max_length=128)
+    price = models.DecimalField(
+        "Shipping Cost", null=True, blank=True, max_digits=5, decimal_places=2
+    )
+    min_price_shipping_condition = models.DecimalField(
+        "Minimum price to get this shipping",
+        null=True,
+        blank=True,
+        max_digits=5,
+        decimal_places=2,
+    )
+    is_weight_dependent = models.BooleanField(
+        "Does the price depend on the shipping weight?",
+        default=False
+    )
+
+    def __str__(self):
+        return f"Suggestion for {self.store} - {self.name}"
+
 class Brand(BaseModel):
     name = models.CharField("Name of the brand", max_length=64)
     description = models.TextField("Description")
@@ -409,11 +432,7 @@ class Product(BaseModel):
         indexes = [GinIndex(fields=["search_vector"])]
 
     def __str__(self):
-        return "{} from {}, price: {}".format(
-            self.name,
-            self.store.name,
-            self.price,
-        )
+        return f"{self.name} from {self.store.name}, price: {self.price}"
 
     @property
     def click_score(self) -> int:
