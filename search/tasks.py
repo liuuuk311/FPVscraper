@@ -1,15 +1,15 @@
 import requests
-from requests.exceptions import ConnectionError, TooManyRedirects
 from celery.task import task
+from requests.exceptions import ConnectionError, TooManyRedirects
 
+from helpers.logger import logger
 from scraper.simple import search, scrape_product, get_random_user_agent
-from search.helpers import  (
+from search.helpers import (
     re_import_store_products,
     re_import_products_from,
     import_product,
     search_and_import_from
 )
-from helpers.logger import logger
 from search.models import Store, Product
 
 
@@ -79,7 +79,7 @@ def task_re_import_product(product_id: str):
 
 @task(name="re_import_product_from_store")
 def task_re_import_product_from_store(store_pk: int):
-    re_import_store_products(Store.objects.get(pk=store_pk))
+    re_import_store_products(store_pk)
 
 
 @task(name="search_and_import_products_from_active_stores")

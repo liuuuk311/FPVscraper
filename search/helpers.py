@@ -1,15 +1,15 @@
 import random
-from threading import Thread
 from time import sleep
 from typing import Dict
 
+from celery.task import task
 from celery.utils.log import get_task_logger
 from django.db.models import QuerySet
 from django.db.utils import IntegrityError
 from django.utils import timezone
 from requests import TooManyRedirects
 
-from helpers.logger import logger
+from helpers import logger
 from scraper.simple import scrape_product, search
 from search.models import Product, Store, ImportQuery
 
@@ -47,14 +47,8 @@ def random_sleep_time() -> float:
 
 
 def re_import_products_from(store_qs: QuerySet):
-    threads = []
     for store in store_qs:
-        p = Thread(target=re_import_store_products, args=(store,))
-        p.start()
-        threads.append(p)
-
-    for t in threads:
-        t.join()
+        re_import_store_products.delay(store.id)
 
 
 def import_product(link: str, store: Store, import_query: ImportQuery):
@@ -66,8 +60,19 @@ def import_product(link: str, store: Store, import_query: ImportQuery):
         sleep(random_sleep_time())
 
 
-def re_import_store_products(store: Store):
+def search_and_import_from(store_qs: QuerySet):
+    for query in ImportQuery.objects.filter(is_active=True):
+        for store in store_qs:
+            search_and_import_products.delay(query.id, store.id)
+
+
+@task
+def re_import_store_products(store_id: int):
     """ Re import all products of a given store """
+    store = Store.objects.filter(id=store_id).first()
+    if not store:
+        return
+
     if not store.is_scrapable:
         logger.warning(f'{store} is not compatible. Import cancelled')
         return
@@ -83,10 +88,18 @@ def re_import_store_products(store: Store):
     store.last_check = timezone.now()
     store.save(update_fields=["last_check"])
 
+@task
+def search_and_import_products(query_id: int, store_id: int):
+    store = Store.objects.filter(id=store_id).first()
+    if not store:
+        return
 
-def search_and_import_products(query: ImportQuery, store: Store):
     if not store.is_scrapable:
         logger.warning(f'{store} is not compatible. Import cancelled')
+        return
+
+    query = ImportQuery.objects.filter(id=query_id).first()
+    if not query:
         return
 
     urls = search(query.text, store, limit=None)
@@ -95,15 +108,3 @@ def search_and_import_products(query: ImportQuery, store: Store):
 
     store.last_check = timezone.now()
     store.save(update_fields=["last_check"])
-
-
-def search_and_import_from(store_qs: QuerySet):
-    for query in ImportQuery.objects.filter(is_active=True):
-        processes = []
-        for store in store_qs:
-            p = Thread(target=search_and_import_products, args=(query, store))
-            p.start()
-            processes.append(p)
-
-        for p in processes:
-            p.join()
