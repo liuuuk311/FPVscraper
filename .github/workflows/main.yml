@@ -32,9 +32,12 @@ jobs:
             docker-compose build
           host: ${{ secrets.HOST }}
           user: deployer
-          key: ${{ secrets.PRIVATE_KEY}}
+          key: ${{ secrets.PRIVATE_KEY }}
       - name: Migrate
         uses: fifsky/ssh-action@master
+        env:
+          # DUMMY KEY
+          DJANGO_SECRET_KEY: "3acd02a9e9579d90e2bb423287ab7fc1748cf1b765100df725"
         with:
           command: |
             cd ~/FPVscraper
@@ -50,4 +53,4 @@ jobs:
             docker-compose up -d
           host: ${{ secrets.HOST }}
           user: deployer
-          key: ${{ secrets.PRIVATE_KEY}}
+          key: ${{ secrets.PRIVATE_KEY }}
