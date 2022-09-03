@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '3c0guu@14!81!%x6x65gg8m+51#v0&96jpg-hjjxj!#vzjatuf'
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -39,8 +39,6 @@ REST_FRAMEWORK = {
 INSTALLED_APPS = [
     'modeltranslation',
     'rest_framework',
-    # 'django_elasticsearch_dsl',
-    # 'django_elasticsearch_dsl_drf',
     'admin_honeypot',
     'django_celery_beat',
 
@@ -168,6 +166,4 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_URLS_REGEX = r"^/api/.*$"
 CORS_ALLOW_CREDENTIALS = False
 
-ADMINS = [
-    # ("Luca", "lucapalonca@gmail.com")
-]
+ADMINS = []
