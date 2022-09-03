@@ -19,6 +19,7 @@ services:
     command: python manage.py runserver 0.0.0.0:8000 --insecure
     environment:
         - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+        - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
         - TELEGRAM_BOT_API_KEY=${TELEGRAM_BOT_API_KEY}
     volumes:
         - .:/code
