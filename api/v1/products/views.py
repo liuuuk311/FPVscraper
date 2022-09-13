@@ -39,7 +39,6 @@ class ProductViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
                 clicks_count=Count("clicks")
             ).order_by('-clicks_count')
 
-
         return qs.annotate(
             similarity=TrigramSimilarity('name', query),
         ).filter(similarity__gt=0.15).order_by('-similarity')

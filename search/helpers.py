@@ -20,7 +20,6 @@ def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bo
     if not data:
         return False
 
-
     product_id = f"{store.name}_{data.get('name')}".replace(' ', '_')
     celery_logger.info(f"ID: {product_id}")
     data["store"] = store

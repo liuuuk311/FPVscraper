@@ -20,23 +20,25 @@ logger = get_task_logger(__name__)
 
 
 def get_soup(url: str, js_enabled: bool = False) -> Optional[BeautifulSoup]:
-    """ Get a soup object from a url """
+    """Get a soup object from a url"""
     if js_enabled:
         logger.info("Getting HTML through a browser in order to use JS")
         html = get_html(url)
     else:
-        page = requests.get(url, headers={'User-Agent': get_random_user_agent()})
+        page = requests.get(url, headers={"User-Agent": get_random_user_agent()})
         if page.status_code != 200:
-            logger.warning(f"Could not get status 200: Status: {page.status_code} Content: {page.content}")
+            logger.warning(
+                f"Could not get status 200: Status: {page.status_code} Content: {page.content}"
+            )
             return None
         html = page.content
 
-    return BeautifulSoup(html, 'html.parser')
+    return BeautifulSoup(html, "html.parser")
 
 
 def get_link(soup: BeautifulSoup, config: Store) -> str:
-    href = soup['href'] if soup.has_attr("href") else soup.find_next('a')['href']
-    if not href.startswith('http'):
+    href = soup["href"] if soup.has_attr("href") else soup.find_next("a")["href"]
+    if not href.startswith("http"):
         href = config.website + href
     return href
 
@@ -74,7 +76,7 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
     :returns: a dictionary with fields as given in the config and values scraped.
         If a field is not found in the page, it won't be returned.
     """
-    fields = fields or ['name', 'price', 'image']
+    fields = fields or ["name", "price", "image"]
 
     logger.info(f"Looking for {fields} on {url}")
     soup = get_soup(url, js_enabled=config.scrape_with_js)
@@ -86,45 +88,61 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
     for field in fields:
         style_class = getattr(config, "product_{}_class".format(field))
         html_tag = getattr(config, "product_{}_tag".format(field))
-        selector = "class" if getattr(config, "product_{}_css_is_class".format(field)) else "id"
+        selector = (
+            "class"
+            if getattr(config, "product_{}_css_is_class".format(field))
+            else "id"
+        )
 
         if not bool(style_class) or not bool(html_tag):
             continue
 
         soup_obj = soup.find(html_tag, {selector: style_class})
+        logger.info(f"Scraping {field} with tag '{html_tag}' and class '{style_class}'")
 
-        logger.info(f"Scraping {field} with tag {html_tag} and class {style_class}")
-
-        if field == 'is_available' and 'is_available' not in data:
-            logger.info(f"Found {soup_obj.get_text() if soup_obj else 'nothing'} in availability tag")
-            data[field] = bool(re.search(config.product_is_available_match, soup_obj.get_text())) if soup_obj else False
+        if field == "is_available" and "is_available" not in data:
+            text = soup_obj.get_text().strip().lower()
+            logger.info(f"Found {text if soup_obj else 'nothing'} in availability tag")
+            data[field] = (
+                bool(re.search(config.product_is_available_match.lower(), text))
+                if soup_obj
+                else False
+            )
             continue
 
         if soup_obj:
             unicode_str_text = soup_obj.get_text()
             logger.info(f"Found {unicode_str_text.strip()}")
 
-            if field == 'image':
+            if field == "image":
                 if soup_obj.name != "img":
                     soup_obj = soup_obj.find("img")
-                img_link = soup_obj['data-src'] if soup_obj.has_attr('data-src') else soup_obj['src']
+                img_link = (
+                    soup_obj["data-src"]
+                    if soup_obj.has_attr("data-src")
+                    else soup_obj["src"]
+                )
                 data[field] = format_image_link(img_link, store=config)
 
-            elif field == 'price':
-                price = parse_price(unicode_str_text.strip(), store_locale=config.locale)
+            elif field == "price":
+                price = parse_price(
+                    unicode_str_text.strip(), store_locale=config.locale
+                )
                 data[field] = price
-                data['currency'] = config.currency
+                data["currency"] = config.currency
 
-            elif field == 'variations' and not data.get("is_available", None):
-                data['is_available'] = None
+            elif field == "variations" and not data.get("is_available", None):
+                data["is_available"] = None
             else:
                 data[field] = unicodedata.normalize("NFKD", unicode_str_text).strip()
 
-    data['link'] = url
+    data["link"] = url
     return data
 
 
-def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep: int = 10) -> List[str]:
+def search(
+    query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep: int = 10
+) -> List[str]:
     """
     Search for the given query on a store and returns a list of product pages
 
@@ -145,9 +163,9 @@ def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep
         if not soup:
             return scraped_urls
 
-        soup_list = soup.find_all(name=config.search_tag,
-                                  attrs={'class': config.search_class},
-                                  limit=limit)
+        soup_list = soup.find_all(
+            name=config.search_tag, attrs={"class": config.search_class}, limit=limit
+        )
 
         for obj in soup_list:
             title = obj.find(class_=config.search_link)
@@ -166,14 +184,22 @@ def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep
             return scraped_urls
 
         if config.search_page_param:
-            logger.info(f"Using page param {config.search_page_param} to find next page")
+            logger.info(
+                f"Using page param {config.search_page_param} to find next page"
+            )
             url_parts = list(urllib.parse.urlparse(next_url))
             query_params = dict(urllib.parse.parse_qsl(url_parts[4]))
 
             if int(query_params.get(config.search_page_param, 1)) >= 10:
                 return scraped_urls
 
-            query_params.update({config.search_page_param: str(int(query_params.get(config.search_page_param, 1)) + 1)})
+            query_params.update(
+                {
+                    config.search_page_param: str(
+                        int(query_params.get(config.search_page_param, 1)) + 1
+                    )
+                }
+            )
             url_parts[4] = urllib.parse.urlencode(query_params)
             next_url = urllib.parse.urlunparse(url_parts)
         elif config.search_next_page:
@@ -186,7 +212,7 @@ def search(query: str, config: Store, limit: Optional[int] = 1, seconds_of_sleep
             if next_link.name != "a":
                 next_link = next_link.find("a")
 
-            next_url = next_link['href']
+            next_url = next_link["href"]
             if next_url and not next_url.startswith("http"):
                 next_url = urllib.parse.urljoin(config.website, next_url)
             sleep(seconds_of_sleep)
