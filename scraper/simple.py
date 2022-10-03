@@ -100,13 +100,11 @@ def scrape_product(url: str, config: Store, fields: Optional[List[str]] = None) 
         soup_obj = soup.find(html_tag, {selector: style_class})
         logger.info(f"Scraping {field} with tag '{html_tag}' and class '{style_class}'")
 
-        if field == "is_available" and "is_available" not in data:
-            text = soup_obj.get_text().strip().lower()
+        if field == "is_available":
+            text = soup_obj.get_text().strip() if soup_obj else ""
             logger.info(f"Found {text if soup_obj else 'nothing'} in availability tag")
-            data[field] = (
-                bool(re.search(config.product_is_available_match.lower(), text))
-                if soup_obj
-                else False
+            data[field] = bool(
+                re.search(config.product_is_available_match.lower(), text.lower())
             )
             continue
 
