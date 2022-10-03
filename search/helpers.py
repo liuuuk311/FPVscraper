@@ -21,15 +21,16 @@ def create_or_update_product(store: Store, data: Dict, query: ImportQuery) -> bo
         return False
 
     product_id = f"{store.name}_{data.get('name')}".replace(' ', '_')
-    celery_logger.info(f"ID: {product_id}")
     data["store"] = store
     data['import_date'] = timezone.now()
     data['import_query'] = query
     data['brand'] = query.brand if query.brand and query.brand.name in data.get("name", "") else None
+
+    celery_logger.info(f"ID: {product_id} with data {data}")
     data.pop("variations", None)
-    celery_logger.info(f"Product data to create: {data}")
     try:
         product, created = Product.objects.update_or_create(id=product_id, defaults=data)
+        celery_logger.info(f"{'created' if created else 'updated'}")
     except IntegrityError as e:
         qs = Product.objects.filter(id=product_id)
         if qs.exists():
@@ -73,11 +74,11 @@ def re_import_store_products(store_id: int):
         return
 
     if not store.is_scrapable:
-        logger.warning(f'{store} is not compatible. Import cancelled')
+        # logger.warning(f'{store} is not compatible. Import cancelled')
         return
 
     for product in store.products.only_active().order_by("import_date"):
-        logger.info(f"Re importing {product.name} from {product.store.name}")
+        # logger.info(f"Re importing {product.name} from {product.store.name}")
         try:
             import_product(product.link, product.store, product.import_query)
         except (ConnectionError, TooManyRedirects):
@@ -94,7 +95,7 @@ def search_and_import_products(query_id: int, store_id: int):
         return
 
     if not store.is_scrapable:
-        logger.warning(f'{store} is not compatible. Import cancelled')
+        # logger.warning(f'{store} is not compatible. Import cancelled')
         return
 
     query = ImportQuery.objects.filter(id=query_id).first()
